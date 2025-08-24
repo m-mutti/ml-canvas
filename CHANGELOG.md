@@ -1,3 +1,10 @@
+## [0.0.2](https://github.com/m-mutti/ml-canvas/compare/v0.0.1...v0.0.2) (2025-08-24)
+
+
+### Bug Fixes
+
+* auth token of npm ([1d31318](https://github.com/m-mutti/ml-canvas/commit/1d31318e1ada6f285a1087f65b17080d872f586d))
+
 # 1.0.0 (2025-08-24)
 
 
