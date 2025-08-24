@@ -30,8 +30,7 @@ A Vue.js canvas component designed specifically for machine learning annotation 
 ## Installation
 
 ```bash
-npm install
-npm run dev
+npm install ml-canvas
 ```
 
 ## Quick Start
