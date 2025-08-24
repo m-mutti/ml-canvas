@@ -65,7 +65,6 @@ jobs:
         with:
           node-version: 'lts/*'
           cache: 'npm'
-          registry-url: 'https://npm.pkg.github.com'
 
       - name: Install dependencies
         run: npm ci
