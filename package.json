@@ -3,7 +3,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A Vue.js canvas component designed for machine learning annotation tasks and AI tool development",
   "type": "module",
   "main": "./dist/ml-canvas.umd.js",
