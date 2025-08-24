@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'path'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -6,15 +7,34 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueJsx(),
-    vueDevTools(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+export default defineConfig(({ mode }) => {
+  const isLib = mode === 'lib'
+  
+  return {
+    plugins: [
+      vue(),
+      vueJsx(),
+      !isLib && vueDevTools(),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      },
     },
-  },
+    build: isLib ? {
+      lib: {
+        entry: resolve(fileURLToPath(new URL('.', import.meta.url)), 'src/components/MLCanvas.vue'),
+        name: 'MLCanvas',
+        fileName: (format) => `ml-canvas.${format}.js`
+      },
+      rollupOptions: {
+        external: ['vue'],
+        output: {
+          globals: {
+            vue: 'Vue'
+          }
+        }
+      }
+    } : undefined
+  }
 })
