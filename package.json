@@ -54,7 +54,6 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "pinia": "^3.0.3",
     "vue": "^3.0.0"
   },
   "peerDependencies": {
