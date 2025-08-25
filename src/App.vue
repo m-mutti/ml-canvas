@@ -67,7 +67,7 @@ const addImage = async () => {
 
   try {
     // Load image from path and convert to base64
-    const response = await fetch('/favicon.ico')
+    const response = await fetch('/sample.jpeg')
     const blob = await response.blob()
 
     // Convert blob to base64
