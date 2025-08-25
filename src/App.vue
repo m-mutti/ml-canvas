@@ -226,7 +226,9 @@ const handleShapeCreated = (shape) => {
             <li><strong>Rectangle:</strong> Click and drag to draw</li>
             <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
             <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
-            <li><strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove it</li>
+            <li>
+              <strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove it
+            </li>
             <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
             <li>
               <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser (fewer

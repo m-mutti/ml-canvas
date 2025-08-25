@@ -66,7 +66,7 @@
  */
 
 /**
- * @typedef {Object} PolygonShape  
+ * @typedef {Object} PolygonShape
  * @extends Shape
  * @property {'polygon'} type - Shape type
  * @property {Point[]} canvas - Canvas polygon points
