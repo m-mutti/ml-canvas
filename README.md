@@ -78,6 +78,17 @@ const loadImage = async () => {
 
 ## Drawing Modes
 
+### Mode Overview
+```javascript
+// Available drawing modes
+const modes = ['none', 'rectangle', 'polygon', 'freestyle', 'delete']
+
+// Set drawing mode
+drawingMode.value = 'delete' // Click to remove shapes
+drawingMode.value = 'rectangle' // Draw rectangles
+drawingMode.value = 'none' // No interaction
+```
+
 ### Rectangle Mode
 Perfect for object detection tasks:
 ```javascript
@@ -120,13 +131,28 @@ Great for custom annotations:
 }
 ```
 
+### Delete Mode
+Interactive shape removal:
+```javascript
+// Set to delete mode
+drawingMode.value = 'delete'
+
+// Visual feedback:
+// - Cursor changes to 'not-allowed'
+// - Red button styling when active
+// - Click any shape to remove it instantly
+
+// No output - shapes are removed from the drawnShapes array
+// Triggers 'shape-removed' event with the deleted shape data
+```
+
 ## API Reference
 
 ### Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freestyle'` |
+| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freestyle'`, `'delete'` |
 | `pasteEnabled` | Boolean | `true` | Enable/disable image pasting from clipboard |
 | `freestyleSensitivity` | Number | `1` | Point density for freestyle drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
@@ -162,9 +188,9 @@ Great for custom annotations:
 
 ### Shape Removal
 ```javascript
-// Click to remove: Set drawing mode to 'none' and click any shape
-drawingMode.value = 'none'
-// Now clicking on shapes will remove them automatically
+// Click to remove: Set drawing mode to 'delete' and click any shape
+drawingMode.value = 'delete'
+// Now clicking on shapes will remove them (cursor shows 'not-allowed')
 
 // Programmatic removal by ID
 const shapeId = 'shape_1_1672531200000'

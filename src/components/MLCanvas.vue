@@ -10,12 +10,13 @@
       @mouseup="handleMouseUp"
       @dblclick="handleDoubleClick"
       @contextmenu="handleRightClick"
+      :style="{ cursor: drawingModeCursor }"
     ></canvas>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
 
 const props = defineProps({
   pasteEnabled: {
@@ -24,8 +25,8 @@ const props = defineProps({
   },
   drawingMode: {
     type: String,
-    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle'
-    validator: (value) => ['none', 'rectangle', 'polygon', 'freestyle'].includes(value)
+    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'delete'
+    validator: (value) => ['none', 'rectangle', 'polygon', 'freestyle', 'delete'].includes(value)
   },
   freestyleSensitivity: {
     type: Number,
@@ -60,6 +61,21 @@ const imageInfo = ref(null) // Stores image position and scale info
 let shapeIdCounter = 0 // Counter for generating unique shape IDs
 
 let resizeTimeout = null
+
+// Computed cursor style based on drawing mode
+const drawingModeCursor = computed(() => {
+  switch (props.drawingMode) {
+    case 'delete':
+      return 'not-allowed'
+    case 'rectangle':
+    case 'polygon':
+    case 'freestyle':
+      return 'crosshair'
+    case 'none':
+    default:
+      return 'default'
+  }
+})
 
 const updateCanvasSize = () => {
   if (!containerRef.value) return
@@ -127,6 +143,18 @@ const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fit
       }
 
       ctx.value.drawImage(img, x, y, drawWidth, drawHeight)
+      
+      // Store image reference and info for redrawing
+      pastedImage.value = img
+      imageInfo.value = {
+        canvasX: x,
+        canvasY: y,
+        canvasWidth: drawWidth,
+        canvasHeight: drawHeight,
+        originalWidth: img.naturalWidth,
+        originalHeight: img.naturalHeight
+      }
+      
       resolve({ width: drawWidth, height: drawHeight, x, y })
     }
     img.onerror = reject
@@ -159,8 +187,8 @@ const drawRectangle = (x, y, width, height, options = {}) => {
   // Store shape using common function
   const shape = storeShape('rectangle', canvasRect, imageData, { fillStyle, strokeStyle, lineWidth, lineDash })
   
-  // Render the shape
-  renderShape(shape)
+  // Redraw entire canvas to preserve image and show new shape
+  redrawCanvas()
   
   return shape
 }
@@ -183,8 +211,8 @@ const drawPolygon = (points, options = {}) => {
   // Store shape using common function
   const shape = storeShape('polygon', points, imageData, { fillStyle, strokeStyle, lineWidth, lineDash, closePath })
   
-  // Render the shape
-  renderShape(shape)
+  // Redraw entire canvas to preserve image and show new shape
+  redrawCanvas()
   
   return shape
 }
@@ -426,12 +454,17 @@ const scaleToImageCoordinates = (canvasX, canvasY) => {
 const handleMouseDown = (event) => {
   const mousePos = getMousePos(event)
   
-  // Handle removal mode when no drawing mode is active
-  if (props.drawingMode === 'none') {
+  // Handle delete mode - click to remove shapes
+  if (props.drawingMode === 'delete') {
     const clickedShapeId = findShapeAtPosition(mousePos)
     if (clickedShapeId !== null) {
       removeShapeById(clickedShapeId)
     }
+    return
+  }
+
+  // No interaction in 'none' mode
+  if (props.drawingMode === 'none') {
     return
   }
 
@@ -449,7 +482,7 @@ const handleMouseDown = (event) => {
 }
 
 const handleMouseMove = (event) => {
-  if (props.drawingMode === 'none') return
+  if (props.drawingMode === 'none' || props.drawingMode === 'delete') return
 
   const mousePos = getMousePos(event)
   currentPoint.value = mousePos
@@ -877,8 +910,8 @@ watch(() => props.pasteEnabled, (newValue) => {
 })
 
 watch(() => props.drawingMode, (newMode) => {
-  if (newMode === 'none') {
-    // Reset drawing state when exiting drawing mode
+  if (newMode === 'none' || newMode === 'delete') {
+    // Reset drawing state when exiting drawing mode or entering delete mode
     isDrawing.value = false
     polygonPoints.value = []
     freestylePath.value = []

@@ -195,6 +195,13 @@ const handleShapeCreated = (shape) => {
         >
           Freestyle
         </button>
+        <button
+          @click="setDrawingMode('delete')"
+          class="btn btn-mode btn-delete-mode"
+          :class="{ active: drawingMode === 'delete' }"
+        >
+          Delete
+        </button>
         <button @click="getShapes" class="btn btn-info">Get Shapes</button>
         <button @click="exportShapes" class="btn btn-export">Export Shapes</button>
         <button @click="clearShapes" class="btn btn-clear-shapes">Clear Shapes</button>
@@ -219,7 +226,7 @@ const handleShapeCreated = (shape) => {
             <li><strong>Rectangle:</strong> Click and drag to draw</li>
             <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
             <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
-            <li><strong>Remove Shapes:</strong> Set mode to "No Drawing" and click on any shape to remove it</li>
+            <li><strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove it</li>
             <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
             <li>
               <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser (fewer
@@ -384,6 +391,22 @@ const handleShapeCreated = (shape) => {
 
 .btn-mode.active:hover {
   background: #218838;
+}
+
+.btn-delete-mode {
+  background: #dc3545 !important;
+}
+
+.btn-delete-mode:hover {
+  background: #c82333 !important;
+}
+
+.btn-delete-mode.active {
+  background: #b02a37 !important;
+}
+
+.btn-delete-mode.active:hover {
+  background: #a02834 !important;
 }
 
 .btn-info {

@@ -115,7 +115,7 @@
 
 /**
  * Drawing mode types
- * @typedef {'none'|'rectangle'|'polygon'|'freestyle'} DrawingMode
+ * @typedef {'none'|'rectangle'|'polygon'|'freestyle'|'delete'} DrawingMode
  */
 
 /**
