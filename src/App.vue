@@ -26,6 +26,12 @@ const clearCanvas = () => {
   canvasRef.value.clearCanvas()
 }
 
+const resetCanvas = () => {
+  if (!canvasRef.value) return
+  canvasRef.value.resetCanvas()
+  drawnShapes.value = []
+}
+
 const addRectangle = () => {
   if (!canvasRef.value) return
 
@@ -158,6 +164,7 @@ const handleShapeCreated = (shape) => {
           {{ pasteEnabled ? 'Disable' : 'Enable' }} Paste
         </button>
         <button @click="clearCanvas" class="btn btn-clear">Clear Canvas</button>
+        <button @click="resetCanvas" class="btn btn-reset">Reset All</button>
       </div>
       <div class="button-group">
         <button
@@ -188,6 +195,13 @@ const handleShapeCreated = (shape) => {
         >
           Freestyle
         </button>
+        <button
+          @click="setDrawingMode('delete')"
+          class="btn btn-mode btn-delete-mode"
+          :class="{ active: drawingMode === 'delete' }"
+        >
+          Delete
+        </button>
         <button @click="getShapes" class="btn btn-info">Get Shapes</button>
         <button @click="exportShapes" class="btn btn-export">Export Shapes</button>
         <button @click="clearShapes" class="btn btn-clear-shapes">Clear Shapes</button>
@@ -208,10 +222,14 @@ const handleShapeCreated = (shape) => {
             <li>Copy an image to your clipboard (Ctrl+C on any image)</li>
             <li>Click "Paste Image" button or press Ctrl+V to paste</li>
             <li>Use "Enable/Disable Paste" to toggle paste functionality</li>
-            <li><strong>Drawing:</strong> Select Rectangle or Polygon mode</li>
+            <li><strong>Drawing:</strong> Select Rectangle, Polygon, or Freestyle mode</li>
             <li><strong>Rectangle:</strong> Click and drag to draw</li>
             <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
             <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
+            <li>
+              <strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove it
+            </li>
+            <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
             <li>
               <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser (fewer
               points)
@@ -377,6 +395,22 @@ const handleShapeCreated = (shape) => {
   background: #218838;
 }
 
+.btn-delete-mode {
+  background: #dc3545 !important;
+}
+
+.btn-delete-mode:hover {
+  background: #c82333 !important;
+}
+
+.btn-delete-mode.active {
+  background: #b02a37 !important;
+}
+
+.btn-delete-mode.active:hover {
+  background: #a02834 !important;
+}
+
 .btn-info {
   background: #17a2b8;
 }
@@ -399,6 +433,14 @@ const handleShapeCreated = (shape) => {
 
 .btn-clear-shapes:hover {
   background: #c82333;
+}
+
+.btn-reset {
+  background: #e74c3c;
+}
+
+.btn-reset:hover {
+  background: #c0392b;
 }
 
 .instructions {
