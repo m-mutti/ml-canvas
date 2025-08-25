@@ -1,3 +1,15 @@
+# [0.1.0](https://github.com/m-mutti/ml-canvas/compare/v0.0.2...v0.1.0) (2025-08-25)
+
+
+### Bug Fixes
+
+* add common storage for all shapes ([1c645a9](https://github.com/m-mutti/ml-canvas/commit/1c645a957125a1ced59bbbc3690cad4c11aa3b7b))
+
+
+### Features
+
+* added delete mode ([9ae950f](https://github.com/m-mutti/ml-canvas/commit/9ae950f11fa98ba96f410a6418550e0be78d636d))
+
 ## [0.0.2](https://github.com/m-mutti/ml-canvas/compare/v0.0.1...v0.0.2) (2025-08-24)
 
 
