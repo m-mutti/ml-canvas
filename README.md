@@ -30,6 +30,31 @@ A Vue.js canvas component designed specifically for machine learning annotation 
 - **Customizable**: Adjustable sensitivity, simplification tolerance, and styling
 - **TypeScript Ready**: Full type support for better development experience
 
+## 🚀 Demo
+
+### Try it Live
+Experience all features of ML Canvas in action:
+**[https://ml-canvas.vercel.app/](https://ml-canvas.vercel.app/)**
+
+The demo includes:
+- Complete annotation interface with Rectangle, Polygon, Freestyle, and Delete modes
+- Image clipboard paste functionality (Ctrl+V)
+- Real-time shape creation and removal
+- Export functionality for ML datasets
+- Interactive shape management with unique IDs
+
+### Run Locally
+Clone and run the demo on your machine:
+
+```bash
+git clone https://github.com/m-mutti/ml-canvas.git
+cd ml-canvas
+npm install
+npm run dev
+```
+
+Then open [http://localhost:5173](http://localhost:5173) to see the demo app.
+
 ## Installation
 
 ```bash
