@@ -26,6 +26,12 @@ const clearCanvas = () => {
   canvasRef.value.clearCanvas()
 }
 
+const resetCanvas = () => {
+  if (!canvasRef.value) return
+  canvasRef.value.resetCanvas()
+  drawnShapes.value = []
+}
+
 const addRectangle = () => {
   if (!canvasRef.value) return
 
@@ -158,6 +164,7 @@ const handleShapeCreated = (shape) => {
           {{ pasteEnabled ? 'Disable' : 'Enable' }} Paste
         </button>
         <button @click="clearCanvas" class="btn btn-clear">Clear Canvas</button>
+        <button @click="resetCanvas" class="btn btn-reset">Reset All</button>
       </div>
       <div class="button-group">
         <button
@@ -208,10 +215,12 @@ const handleShapeCreated = (shape) => {
             <li>Copy an image to your clipboard (Ctrl+C on any image)</li>
             <li>Click "Paste Image" button or press Ctrl+V to paste</li>
             <li>Use "Enable/Disable Paste" to toggle paste functionality</li>
-            <li><strong>Drawing:</strong> Select Rectangle or Polygon mode</li>
+            <li><strong>Drawing:</strong> Select Rectangle, Polygon, or Freestyle mode</li>
             <li><strong>Rectangle:</strong> Click and drag to draw</li>
             <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
             <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
+            <li><strong>Remove Shapes:</strong> Set mode to "No Drawing" and click on any shape to remove it</li>
+            <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
             <li>
               <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser (fewer
               points)
@@ -399,6 +408,14 @@ const handleShapeCreated = (shape) => {
 
 .btn-clear-shapes:hover {
   background: #c82333;
+}
+
+.btn-reset {
+  background: #e74c3c;
+}
+
+.btn-reset:hover {
+  background: #c0392b;
 }
 
 .instructions {

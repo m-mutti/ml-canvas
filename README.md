@@ -22,8 +22,11 @@ A Vue.js canvas component designed specifically for machine learning annotation 
 - **Real-time Preview**: Live preview while drawing with visual feedback
 
 ### 🔧 **Developer Features**
-- **Shape Events**: Get notified when shapes are created with `@shape-created`
-- **Programmatic Control**: Add shapes, clear canvas, manage drawing modes via API
+- **Shape Management**: Unique IDs for every shape, ID-based removal and querying
+- **Shape Events**: Get notified when shapes are created/removed with `@shape-created` and `@shape-removed`
+- **Programmatic Control**: Add shapes, clear canvas, manage drawing modes via comprehensive API
+- **Interactive Removal**: Click on any shape to remove it when in "No Drawing" mode
+- **Reset Functionality**: Complete canvas reset that clears both image and all shapes
 - **Customizable**: Adjustable sensitivity, simplification tolerance, and styling
 - **TypeScript Ready**: Full type support for better development experience
 
@@ -52,11 +55,18 @@ const canvasRef = ref(null)
 const drawingMode = ref('rectangle')
 
 const handleNewAnnotation = (shape) => {
-  // Shape contains both canvas and image coordinates
+  // Shape contains ID, coordinates, style, and timestamp
   console.log('New annotation:', shape)
+  console.log('Shape ID:', shape.id) // Unique identifier
   
   // Send to your ML training pipeline
   sendToMLPipeline(shape.image) // Use image coordinates for training
+}
+
+const handleShapeRemoval = (shape) => {
+  console.log('Shape removed:', shape.id)
+  // Update your ML dataset
+  removeFromMLPipeline(shape.id)
 }
 
 // Programmatically add images
@@ -73,9 +83,12 @@ Perfect for object detection tasks:
 ```javascript
 // Output format
 {
+  id: 'shape_1_1672531200000',          // Unique identifier
   type: 'rectangle',
   canvas: { x, y, width, height },     // Display coordinates
-  image: { x, y, width, height }       // Original image coordinates
+  image: { x, y, width, height },      // Original image coordinates
+  style: { strokeStyle, lineWidth, ... }, // Applied styling
+  timestamp: 1672531200000             // Creation time
 }
 ```
 
@@ -84,9 +97,12 @@ Ideal for semantic segmentation:
 ```javascript
 // Output format
 {
+  id: 'shape_2_1672531205000',          // Unique identifier
   type: 'polygon',
   canvas: [{ x, y }, ...],             // Display coordinates
-  image: [{ x, y }, ...]               // Original image coordinates
+  image: [{ x, y }, ...],              // Original image coordinates
+  style: { strokeStyle, lineWidth, ... }, // Applied styling
+  timestamp: 1672531205000             // Creation time
 }
 ```
 
@@ -95,9 +111,12 @@ Great for custom annotations:
 ```javascript
 // Output format
 {
+  id: 'shape_3_1672531210000',          // Unique identifier
   type: 'freestyle',
   canvas: [{ x, y }, ...],             // Simplified path points
-  image: [{ x, y }, ...]               // Original image coordinates
+  image: [{ x, y }, ...],              // Original image coordinates
+  style: { strokeStyle, lineWidth, ... }, // Applied styling
+  timestamp: 1672531210000             // Creation time
 }
 ```
 
@@ -117,6 +136,8 @@ Great for custom annotations:
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `shape-created` | `shape` | Emitted when a new shape is completed |
+| `shape-removed` | `shape` | Emitted when a shape is removed |
+| `canvas-reset` | `void` | Emitted when canvas is completely reset |
 
 ### Methods
 
@@ -124,11 +145,65 @@ Great for custom annotations:
 |--------|------------|-------------|
 | `addImage(src, x, y, width, height, fitCanvas)` | Image source and positioning | Add image to canvas |
 | `pasteImage()` | None | Paste image from clipboard |
-| `clearCanvas()` | None | Clear entire canvas |
-| `getDrawnShapes()` | None | Get all drawn shapes |
+| `clearCanvas()` | None | Clear entire canvas (leaves shapes) |
+| `resetCanvas()` | None | **NEW** Reset everything (image + shapes) |
+| `getDrawnShapes()` | None | Get all drawn shapes with IDs |
 | `clearDrawnShapes()` | None | Clear only drawn shapes |
 | `drawRectangle(x, y, w, h, options)` | Coordinates and styling | Draw rectangle programmatically |
 | `drawPolygon(points, options)` | Points array and styling | Draw polygon programmatically |
+| `removeShape(idOrIndex)` | Shape ID or index | Remove shape by ID or index |
+| `removeShapeById(id)` | Shape ID | **NEW** Remove shape by ID |
+| `findShapeById(id)` | Shape ID | **NEW** Find shape by ID |
+| `findShapeAtPosition(point)` | Mouse coordinates | **NEW** Find shape ID at position |
+| `renderShape(shape)` | Shape object | **NEW** Render individual shape |
+| `storeShape(type, canvas, image, style)` | Shape data | **NEW** Common storage function |
+
+## Interactive Features
+
+### Shape Removal
+```javascript
+// Click to remove: Set drawing mode to 'none' and click any shape
+drawingMode.value = 'none'
+// Now clicking on shapes will remove them automatically
+
+// Programmatic removal by ID
+const shapeId = 'shape_1_1672531200000'
+canvasRef.value.removeShapeById(shapeId)
+
+// Find and remove shape at specific position
+const mousePos = { x: 100, y: 50 }
+const shapeId = canvasRef.value.findShapeAtPosition(mousePos)
+if (shapeId) {
+  canvasRef.value.removeShapeById(shapeId)
+}
+```
+
+### Complete Reset
+```javascript
+// Reset everything - image and all shapes
+canvasRef.value.resetCanvas()
+
+// Clear only the canvas background (keeps shapes)
+canvasRef.value.clearCanvas()
+
+// Clear only drawn shapes (keeps image)
+canvasRef.value.clearDrawnShapes()
+```
+
+### Shape Management
+```javascript
+// Get all shapes with their IDs
+const shapes = canvasRef.value.getDrawnShapes()
+shapes.forEach(shape => {
+  console.log(`Shape ${shape.id}: ${shape.type}`)
+})
+
+// Find specific shape
+const shape = canvasRef.value.findShapeById('shape_1_1672531200000')
+if (shape) {
+  console.log('Found shape:', shape.type)
+}
+```
 
 ## ML Use Cases
 
@@ -138,8 +213,10 @@ Great for custom annotations:
 const annotations = shapes
   .filter(s => s.type === 'rectangle')
   .map(s => ({
+    id: s.id,                    // Unique identifier for tracking
     class: 'person',
-    bbox: [s.image.x, s.image.y, s.image.width, s.image.height]
+    bbox: [s.image.x, s.image.y, s.image.width, s.image.height],
+    timestamp: s.timestamp       // Creation time
   }))
 ```
 
@@ -149,8 +226,10 @@ const annotations = shapes
 const masks = shapes
   .filter(s => s.type === 'polygon')
   .map(s => ({
+    id: s.id,                    // Unique identifier for tracking
     class: 'road',
-    points: s.image.map(p => [p.x, p.y])
+    points: s.image.map(p => [p.x, p.y]),
+    timestamp: s.timestamp       // Creation time
   }))
 ```
 
@@ -160,9 +239,36 @@ const masks = shapes
 const customAnnotations = shapes
   .filter(s => s.type === 'freestyle')
   .map(s => ({
+    id: s.id,                    // Unique identifier for tracking
     type: 'gesture',
-    path: s.image
+    path: s.image,
+    timestamp: s.timestamp       // Creation time
   }))
+```
+
+### Annotation Management
+```javascript
+// Track annotation changes for ML pipeline updates
+const handleShapeCreated = (shape) => {
+  // Add to ML dataset
+  MLDataset.add(shape.id, {
+    type: shape.type,
+    coordinates: shape.image,
+    timestamp: shape.timestamp
+  })
+}
+
+const handleShapeRemoved = (shape) => {
+  // Remove from ML dataset
+  MLDataset.remove(shape.id)
+}
+
+// Batch operations with IDs
+const batchRemove = (shapeIds) => {
+  shapeIds.forEach(id => {
+    canvasRef.value.removeShapeById(id)
+  })
+}
 ```
 
 ## Export Formats
@@ -173,14 +279,18 @@ The component supports exporting annotations in JSON format compatible with popu
 {
   "annotations": [
     {
+      "id": "shape_1_1672531200000",
       "type": "rectangle",
       "class": "person",
-      "coordinates": { "x": 100, "y": 50, "width": 200, "height": 300 }
+      "coordinates": { "x": 100, "y": 50, "width": 200, "height": 300 },
+      "timestamp": 1672531200000
     },
     {
+      "id": "shape_2_1672531205000",
       "type": "polygon", 
       "class": "car",
-      "points": [[x1, y1], [x2, y2], [x3, y3]]
+      "points": [[x1, y1], [x2, y2], [x3, y3]],
+      "timestamp": 1672531205000
     }
   ]
 }
@@ -191,9 +301,11 @@ The component supports exporting annotations in JSON format compatible with popu
 The component is built with Vue 3 and provides a clean, extensible architecture for ML annotation tools. Key features include:
 
 - **Separation of Concerns**: Canvas operations, coordinate systems, and ML data formats are cleanly separated
-- **Event-Driven**: Real-time updates through Vue's reactive system
-- **Performance Optimized**: Efficient drawing with path simplification and debounced operations
-- **Extensible**: Easy to add new drawing modes and export formats
+- **Event-Driven**: Real-time updates through Vue's reactive system with shape lifecycle events
+- **Performance Optimized**: Efficient drawing with path simplification, debounced operations, and centralized rendering
+- **Shape Management**: Unique IDs, centralized storage, and flexible removal system
+- **Interactive Interface**: Click-to-remove functionality and comprehensive reset options
+- **Extensible**: Easy to add new drawing modes, export formats, and shape management features
 
 ## Project Setup
 

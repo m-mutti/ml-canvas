@@ -39,7 +39,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['shape-created'])
+const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset'])
 
 const containerRef = ref(null)
 const canvasRef = ref(null)
@@ -57,6 +57,7 @@ const polygonPoints = ref([])
 const freestylePath = ref([])
 const drawnShapes = ref([])
 const imageInfo = ref(null) // Stores image position and scale info
+let shapeIdCounter = 0 // Counter for generating unique shape IDs
 
 let resizeTimeout = null
 
@@ -143,24 +144,25 @@ const drawRectangle = (x, y, width, height, options = {}) => {
     lineDash = []
   } = options
 
-  ctx.value.save()
+  // Create canvas and image coordinate data
+  const canvasRect = { x, y, width, height }
+  const topLeft = scaleToImageCoordinates(x, y)
+  const bottomRight = scaleToImageCoordinates(x + width, y + height)
+  
+  const imageData = topLeft && bottomRight ? {
+    x: topLeft.x,
+    y: topLeft.y,
+    width: bottomRight.x - topLeft.x,
+    height: bottomRight.y - topLeft.y
+  } : canvasRect
 
-  if (lineDash.length > 0) {
-    ctx.value.setLineDash(lineDash)
-  }
-
-  if (fillStyle) {
-    ctx.value.fillStyle = fillStyle
-    ctx.value.fillRect(x, y, width, height)
-  }
-
-  if (strokeStyle) {
-    ctx.value.strokeStyle = strokeStyle
-    ctx.value.lineWidth = lineWidth
-    ctx.value.strokeRect(x, y, width, height)
-  }
-
-  ctx.value.restore()
+  // Store shape using common function
+  const shape = storeShape('rectangle', canvasRect, imageData, { fillStyle, strokeStyle, lineWidth, lineDash })
+  
+  // Render the shape
+  renderShape(shape)
+  
+  return shape
 }
 
 const drawPolygon = (points, options = {}) => {
@@ -174,40 +176,126 @@ const drawPolygon = (points, options = {}) => {
     closePath = true
   } = options
 
-  ctx.value.save()
-  ctx.value.beginPath()
+  // Create image coordinate data
+  const imagePoints = points.map(p => scaleToImageCoordinates(p.x, p.y)).filter(p => p !== null)
+  const imageData = imagePoints.length > 0 ? imagePoints : points
 
-  if (lineDash.length > 0) {
-    ctx.value.setLineDash(lineDash)
-  }
-
-  ctx.value.moveTo(points[0].x, points[0].y)
-
-  for (let i = 1; i < points.length; i++) {
-    ctx.value.lineTo(points[i].x, points[i].y)
-  }
-
-  if (closePath) {
-    ctx.value.closePath()
-  }
-
-  if (fillStyle) {
-    ctx.value.fillStyle = fillStyle
-    ctx.value.fill()
-  }
-
-  if (strokeStyle) {
-    ctx.value.strokeStyle = strokeStyle
-    ctx.value.lineWidth = lineWidth
-    ctx.value.stroke()
-  }
-
-  ctx.value.restore()
+  // Store shape using common function
+  const shape = storeShape('polygon', points, imageData, { fillStyle, strokeStyle, lineWidth, lineDash, closePath })
+  
+  // Render the shape
+  renderShape(shape)
+  
+  return shape
 }
 
 const clearCanvas = () => {
   if (!ctx.value) return
   ctx.value.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
+}
+
+// Generate unique ID for shapes
+const generateShapeId = () => {
+  return `shape_${++shapeIdCounter}_${Date.now()}`
+}
+
+// Common function to store drawn shapes with IDs
+const storeShape = (type, canvasData, imageData = null, style = {}) => {
+  const shape = {
+    id: generateShapeId(),
+    type,
+    canvas: canvasData,
+    image: imageData || canvasData,
+    style,
+    timestamp: Date.now()
+  }
+  
+  drawnShapes.value.push(shape)
+  emit('shape-created', shape)
+  return shape
+}
+
+// Render a single shape on canvas
+const renderShape = (shape) => {
+  if (!ctx.value || !shape) return
+
+  const { type, canvas: canvasData, style } = shape
+
+  if (type === 'rectangle') {
+    const { x, y, width, height } = canvasData
+    const {
+      fillStyle = null,
+      strokeStyle = '#000000',
+      lineWidth = 1,
+      lineDash = []
+    } = style
+
+    ctx.value.save()
+    
+    if (lineDash.length > 0) {
+      ctx.value.setLineDash(lineDash)
+    }
+
+    if (fillStyle) {
+      ctx.value.fillStyle = fillStyle
+      ctx.value.fillRect(x, y, width, height)
+    }
+
+    if (strokeStyle) {
+      ctx.value.strokeStyle = strokeStyle
+      ctx.value.lineWidth = lineWidth
+      ctx.value.strokeRect(x, y, width, height)
+    }
+
+    ctx.value.restore()
+
+  } else if (type === 'polygon' || type === 'freestyle') {
+    const points = canvasData
+    const {
+      fillStyle = null,
+      strokeStyle = type === 'polygon' ? '#00ff00' : '#0066ff',
+      lineWidth = 2,
+      lineDash = [],
+      closePath = true
+    } = style
+
+    if (!points || points.length < 2) return
+
+    ctx.value.save()
+    ctx.value.beginPath()
+
+    if (lineDash.length > 0) {
+      ctx.value.setLineDash(lineDash)
+    }
+
+    if (type === 'freestyle' && points.length > 2) {
+      // Use smooth curves for freestyle shapes
+      drawSmoothPath(ctx.value, points, closePath)
+    } else {
+      // Regular line drawing for polygons
+      ctx.value.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length; i++) {
+        ctx.value.lineTo(points[i].x, points[i].y)
+      }
+    }
+
+    if (closePath) {
+      ctx.value.closePath()
+    }
+
+    if (fillStyle) {
+      ctx.value.fillStyle = fillStyle
+      ctx.value.fill()
+    }
+
+    if (strokeStyle) {
+      ctx.value.strokeStyle = strokeStyle
+      ctx.value.lineWidth = lineWidth
+      ctx.value.stroke()
+    }
+
+    ctx.value.restore()
+  }
 }
 
 const pasteImage = async (x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -336,9 +424,17 @@ const scaleToImageCoordinates = (canvasX, canvasY) => {
 }
 
 const handleMouseDown = (event) => {
-  if (props.drawingMode === 'none') return
-
   const mousePos = getMousePos(event)
+  
+  // Handle removal mode when no drawing mode is active
+  if (props.drawingMode === 'none') {
+    const clickedShapeId = findShapeAtPosition(mousePos)
+    if (clickedShapeId !== null) {
+      removeShapeById(clickedShapeId)
+    }
+    return
+  }
+
   startPoint.value = mousePos
   currentPoint.value = mousePos
 
@@ -385,8 +481,6 @@ const handleMouseUp = () => {
     isDrawing.value = false
     const shape = createRectangleShape()
     if (shape) {
-      drawnShapes.value.push(shape)
-      emit('shape-created', shape)
       redrawCanvas()
     }
   } else if (props.drawingMode === 'freestyle' && isDrawing.value) {
@@ -395,8 +489,6 @@ const handleMouseUp = () => {
     const shape = createFreestyleShape()
     if (shape) {
       console.log('Shape created successfully')
-      drawnShapes.value.push(shape)
-      emit('shape-created', shape)
       freestylePath.value = []
       redrawCanvas()
     } else {
@@ -425,8 +517,6 @@ const handleRightClick = (event) => {
 const finishPolygon = () => {
   const shape = createPolygonShape()
   if (shape) {
-    drawnShapes.value.push(shape)
-    emit('shape-created', shape)
     polygonPoints.value = []
     redrawCanvas()
   }
@@ -449,16 +539,20 @@ const createRectangleShape = () => {
 
   if (!topLeft || !bottomRight) return null
 
-  return {
-    type: 'rectangle',
-    canvas: canvasRect,
-    image: {
-      x: topLeft.x,
-      y: topLeft.y,
-      width: bottomRight.x - topLeft.x,
-      height: bottomRight.y - topLeft.y
-    }
+  const imageData = {
+    x: topLeft.x,
+    y: topLeft.y,
+    width: bottomRight.x - topLeft.x,
+    height: bottomRight.y - topLeft.y
   }
+
+  // Use common storage function
+  return storeShape('rectangle', canvasRect, imageData, {
+    fillStyle: null,
+    strokeStyle: '#ff0000',
+    lineWidth: 2,
+    lineDash: []
+  })
 }
 
 const createPolygonShape = () => {
@@ -467,11 +561,14 @@ const createPolygonShape = () => {
 
   if (imagePoints.length < 2) return null
 
-  return {
-    type: 'polygon',
-    canvas: canvasPoints,
-    image: imagePoints
-  }
+  // Use common storage function
+  return storeShape('polygon', canvasPoints, imagePoints, {
+    fillStyle: null,
+    strokeStyle: '#00ff00',
+    lineWidth: 2,
+    lineDash: [],
+    closePath: true
+  })
 }
 
 const createFreestyleShape = () => {
@@ -498,11 +595,14 @@ const createFreestyleShape = () => {
   
   console.log('Creating freestyle shape with', imagePoints.length, 'points')
   
-  return {
-    type: 'freestyle',
-    canvas: simplifiedPath,
-    image: imagePoints
-  }
+  // Use common storage function
+  return storeShape('freestyle', simplifiedPath, imagePoints, {
+    fillStyle: null,
+    strokeStyle: '#0066ff',
+    lineWidth: 2,
+    lineDash: [],
+    closePath: true
+  })
 }
 
 // Douglas-Peucker algorithm for path simplification
@@ -679,45 +779,9 @@ const redrawCanvas = () => {
     ctx.value.drawImage(pastedImage.value, canvasX, canvasY, canvasWidth, canvasHeight)
   }
 
-  // Redraw all shapes
+  // Redraw all shapes using renderShape function
   drawnShapes.value.forEach(shape => {
-    if (shape.type === 'rectangle') {
-      const rect = shape.canvas
-      ctx.value.save()
-      ctx.value.strokeStyle = '#ff0000'
-      ctx.value.lineWidth = 2
-      ctx.value.strokeRect(rect.x, rect.y, rect.width, rect.height)
-      ctx.value.restore()
-    } else if (shape.type === 'polygon') {
-      const points = shape.canvas
-      if (points.length < 2) return
-
-      ctx.value.save()
-      ctx.value.strokeStyle = '#00ff00'
-      ctx.value.lineWidth = 2
-      ctx.value.beginPath()
-      ctx.value.moveTo(points[0].x, points[0].y)
-      for (let i = 1; i < points.length; i++) {
-        ctx.value.lineTo(points[i].x, points[i].y)
-      }
-      ctx.value.closePath()
-      ctx.value.stroke()
-      ctx.value.restore()
-    } else if (shape.type === 'freestyle') {
-      const points = shape.canvas
-      if (points.length < 2) return
-
-      ctx.value.save()
-      ctx.value.strokeStyle = '#0066ff'
-      ctx.value.lineWidth = 2
-      ctx.value.beginPath()
-      
-      // Use smooth curves for final shape too (closed shape)
-      drawSmoothPath(ctx.value, points, true)
-      ctx.value.closePath()
-      ctx.value.stroke()
-      ctx.value.restore()
-    }
+    renderShape(shape)
   })
 }
 
@@ -726,6 +790,85 @@ const getDrawnShapes = () => drawnShapes.value
 const clearDrawnShapes = () => {
   drawnShapes.value = []
   redrawCanvas()
+}
+
+// Find shape at clicked position - returns shape ID instead of index
+const findShapeAtPosition = (mousePos) => {
+  for (let i = drawnShapes.value.length - 1; i >= 0; i--) {
+    const shape = drawnShapes.value[i]
+    
+    if (shape.type === 'rectangle') {
+      const rect = shape.canvas
+      if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width &&
+          mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height) {
+        return shape.id
+      }
+    } else if (shape.type === 'polygon' || shape.type === 'freestyle') {
+      if (isPointInPolygon(mousePos, shape.canvas)) {
+        return shape.id
+      }
+    }
+  }
+  return null
+}
+
+// Find shape by ID
+const findShapeById = (id) => {
+  return drawnShapes.value.find(shape => shape.id === id)
+}
+
+// Check if point is inside polygon using ray casting algorithm
+const isPointInPolygon = (point, polygon) => {
+  let inside = false
+  const x = point.x
+  const y = point.y
+  
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x
+    const yi = polygon[i].y
+    const xj = polygon[j].x
+    const yj = polygon[j].y
+    
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside
+    }
+  }
+  return inside
+}
+
+// Remove shape by ID without full redraw
+const removeShapeById = (id) => {
+  const shapeIndex = drawnShapes.value.findIndex(shape => shape.id === id)
+  if (shapeIndex >= 0) {
+    const removedShape = drawnShapes.value.splice(shapeIndex, 1)[0]
+    redrawCanvas() // Still need to redraw all since canvas is not layered
+    emit('shape-removed', removedShape)
+    return removedShape
+  }
+  return null
+}
+
+// Legacy function for backward compatibility - now uses ID-based removal
+const removeShape = (indexOrId) => {
+  if (typeof indexOrId === 'string') {
+    return removeShapeById(indexOrId)
+  } else {
+    // Handle legacy index-based removal
+    if (indexOrId >= 0 && indexOrId < drawnShapes.value.length) {
+      const shape = drawnShapes.value[indexOrId]
+      return removeShapeById(shape.id)
+    }
+  }
+  return null
+}
+
+// Reset entire canvas (clear image and shapes)
+const resetCanvas = () => {
+  clearCanvas()
+  drawnShapes.value = []
+  pastedImage.value = null
+  imageInfo.value = null
+  emit('canvas-reset')
 }
 
 // Watch for prop changes
@@ -770,6 +913,7 @@ defineExpose({
   drawRectangle,
   drawPolygon,
   clearCanvas,
+  resetCanvas,
   getContext,
   getCanvas,
   getCanvasSize,
@@ -777,7 +921,13 @@ defineExpose({
   getPastedImage,
   setImagePasteEnabled,
   getDrawnShapes,
-  clearDrawnShapes
+  clearDrawnShapes,
+  removeShape,
+  removeShapeById,
+  findShapeAtPosition,
+  findShapeById,
+  renderShape,
+  storeShape
 })
 </script>
 
