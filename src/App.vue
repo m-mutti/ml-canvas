@@ -4,22 +4,22 @@ import MLCanvas from './components/MLCanvas.vue'
 
 const canvasRef = ref(null)
 
-const colors = [
-  '#ff6b6b',
-  '#4ecdc4',
-  '#45b7d1',
-  '#96ceb4',
-  '#ffeaa7',
-  '#dda0dd',
-  '#98d8c8',
-  '#f7dc6f',
-]
+// const colors = [
+//   '#ff6b6b',
+//   '#4ecdc4',
+//   '#45b7d1',
+//   '#96ceb4',
+//   '#ffeaa7',
+//   '#dda0dd',
+//   '#98d8c8',
+//   '#f7dc6f',
+// ]
 
-const getRandomColor = () => colors[Math.floor(Math.random() * colors.length)]
-const getRandomPosition = () => ({
-  x: Math.random() * 400 + 50,
-  y: Math.random() * 300 + 50,
-})
+// const getRandomColor = () => colors[Math.floor(Math.random() * colors.length)]
+// const getRandomPosition = () => ({
+//   x: Math.random() * 400 + 50,
+//   y: Math.random() * 300 + 50,
+// })
 
 const clearCanvas = () => {
   if (!canvasRef.value) return
@@ -32,36 +32,36 @@ const resetCanvas = () => {
   drawnShapes.value = []
 }
 
-const addRectangle = () => {
-  if (!canvasRef.value) return
+// const addRectangle = () => {
+//   if (!canvasRef.value) return
 
-  const pos = getRandomPosition()
-  canvasRef.value.drawRectangle(pos.x, pos.y, 80, 60, {
-    fillStyle: getRandomColor(),
-    strokeStyle: '#2c3e50',
-    lineWidth: 2,
-  })
-}
+//   const pos = getRandomPosition()
+//   canvasRef.value.drawRectangle(pos.x, pos.y, 80, 60, {
+//     fillStyle: getRandomColor(),
+//     strokeStyle: '#2c3e50',
+//     lineWidth: 2,
+//   })
+// }
 
-const addPolygon = () => {
-  if (!canvasRef.value) return
+// const addPolygon = () => {
+//   if (!canvasRef.value) return
 
-  const centerX = Math.random() * 400 + 100
-  const centerY = Math.random() * 300 + 100
-  const size = 40
+//   const centerX = Math.random() * 400 + 100
+//   const centerY = Math.random() * 300 + 100
+//   const size = 40
 
-  const points = [
-    { x: centerX, y: centerY - size },
-    { x: centerX + size, y: centerY + size },
-    { x: centerX - size, y: centerY + size },
-  ]
+//   const points = [
+//     { x: centerX, y: centerY - size },
+//     { x: centerX + size, y: centerY + size },
+//     { x: centerX - size, y: centerY + size },
+//   ]
 
-  canvasRef.value.drawPolygon(points, {
-    fillStyle: getRandomColor(),
-    strokeStyle: '#2c3e50',
-    lineWidth: 2,
-  })
-}
+//   canvasRef.value.drawPolygon(points, {
+//     fillStyle: getRandomColor(),
+//     strokeStyle: '#2c3e50',
+//     lineWidth: 2,
+//   })
+// }
 const addImage = async () => {
   if (!canvasRef.value) return
 
@@ -152,8 +152,6 @@ const handleShapeCreated = (shape) => {
     <header class="header">
       <h1>ML Canvas Library Demo</h1>
       <div class="button-group">
-        <button @click="addRectangle" class="btn btn-rectangle">Add Rectangle</button>
-        <button @click="addPolygon" class="btn btn-polygon">Add Polygon</button>
         <button @click="addImage" class="btn btn-image">Add Image</button>
         <button @click="pasteImage" class="btn btn-paste">Paste Image</button>
         <button
