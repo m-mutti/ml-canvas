@@ -106,6 +106,10 @@ const togglePasteEnabled = () => {
 const pasteEnabled = ref(true)
 const drawingMode = ref('none')
 const drawnShapes = ref([])
+const instructionsCollapsed = ref(false)
+const dataViewCollapsed = ref(false)
+const freestyleSensitivity = ref(1.0)
+const simplificationTolerance = ref(2.0)
 
 const setDrawingMode = (mode) => {
   drawingMode.value = mode
@@ -200,7 +204,6 @@ const handleShapeCreated = (shape) => {
         >
           Delete
         </button>
-        <button @click="getShapes" class="btn btn-info">Get Shapes</button>
         <button @click="exportShapes" class="btn btn-export">Export Shapes</button>
         <button @click="clearShapes" class="btn btn-clear-shapes">Clear Shapes</button>
       </div>
@@ -214,26 +217,34 @@ const handleShapeCreated = (shape) => {
           :drawingMode="drawingMode"
           @shape-created="handleShapeCreated"
         />
-        <div class="instructions">
-          <p><strong>Instructions:</strong></p>
-          <ul>
-            <li>Copy an image to your clipboard (Ctrl+C on any image)</li>
-            <li>Click "Paste Image" button or press Ctrl+V to paste</li>
-            <li>Use "Enable/Disable Paste" to toggle paste functionality</li>
-            <li><strong>Drawing:</strong> Select Rectangle, Polygon, or Freestyle mode</li>
-            <li><strong>Rectangle:</strong> Click and drag to draw</li>
-            <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
-            <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
-            <li>
-              <strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove it
-            </li>
-            <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
-            <li>
-              <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser (fewer
-              points)
-            </li>
-            <li>Coordinates are scaled to match original image dimensions</li>
-          </ul>
+        <div class="instructions" :class="{ collapsed: instructionsCollapsed }">
+          <div class="pane-header">
+            <p><strong>Instructions:</strong></p>
+            <button @click="instructionsCollapsed = !instructionsCollapsed" class="collapse-btn">
+              {{ instructionsCollapsed ? '▼' : '▲' }}
+            </button>
+          </div>
+          <div v-show="!instructionsCollapsed" class="pane-content">
+            <ul>
+              <li>Copy an image to your clipboard (Ctrl+C on any image)</li>
+              <li>Click "Paste Image" button or press Ctrl+V to paste</li>
+              <li>Use "Enable/Disable Paste" to toggle paste functionality</li>
+              <li><strong>Drawing:</strong> Select Rectangle, Polygon, or Freestyle mode</li>
+              <li><strong>Rectangle:</strong> Click and drag to draw</li>
+              <li><strong>Polygon:</strong> Click points, right-click or double-click to finish</li>
+              <li><strong>Freestyle:</strong> Click and drag to trace a path</li>
+              <li>
+                <strong>Delete Mode:</strong> Select "Delete" mode and click on any shape to remove
+                it
+              </li>
+              <li><strong>Reset All:</strong> Clears everything (image and all shapes)</li>
+              <li>
+                <strong>Sensitivity:</strong> Lower = smoother (more points), Higher = coarser
+                (fewer points)
+              </li>
+              <li>Coordinates are scaled to match original image dimensions</li>
+            </ul>
+          </div>
         </div>
         <div v-if="drawingMode === 'freestyle'" class="freestyle-controls">
           <p><strong>Freestyle Controls:</strong></p>
@@ -260,21 +271,32 @@ const handleShapeCreated = (shape) => {
             />
           </div>
         </div>
-        <div v-if="drawnShapes.length > 0" class="shapes-info">
-          <p>
-            <strong>Drawn Shapes ({{ drawnShapes.length }}):</strong>
-          </p>
-          <div class="shape-item" v-for="(shape, index) in drawnShapes" :key="index">
-            <strong>{{ shape.type }}:</strong>
-            <div v-if="shape.type === 'rectangle'">
-              x: {{ shape.image.x }}, y: {{ shape.image.y }}, w: {{ shape.image.width }}, h:
-              {{ shape.image.height }}
-            </div>
-            <div v-else-if="shape.type === 'polygon'">
-              Points: {{ shape.image.map((p) => `(${p.x},${p.y})`).join(', ') }}
-            </div>
-            <div v-else-if="shape.type === 'freestyle'">
-              Freestyle Path: {{ shape.image.length }} points
+        <div
+          v-if="drawnShapes.length > 0"
+          class="shapes-info"
+          :class="{ collapsed: dataViewCollapsed }"
+        >
+          <div class="pane-header">
+            <p>
+              <strong>Drawn Shapes ({{ drawnShapes.length }}):</strong>
+            </p>
+            <button @click="dataViewCollapsed = !dataViewCollapsed" class="collapse-btn">
+              {{ dataViewCollapsed ? '▼' : '▲' }}
+            </button>
+          </div>
+          <div v-show="!dataViewCollapsed" class="pane-content">
+            <div class="shape-item" v-for="(shape, index) in drawnShapes" :key="index">
+              <strong>{{ shape.type }}:</strong>
+              <div v-if="shape.type === 'rectangle'">
+                x: {{ shape.image.x }}, y: {{ shape.image.y }}, w: {{ shape.image.width }}, h:
+                {{ shape.image.height }}
+              </div>
+              <div v-else-if="shape.type === 'polygon'">
+                Points: {{ shape.image.map((p) => `(${p.x},${p.y})`).join(', ') }}
+              </div>
+              <div v-else-if="shape.type === 'freestyle'">
+                Freestyle Path: {{ shape.image.length }} points
+              </div>
             </div>
           </div>
         </div>
@@ -450,6 +472,11 @@ const handleShapeCreated = (shape) => {
   border-radius: 5px;
   border: 1px solid #dee2e6;
   max-width: 300px;
+  transition: all 0.3s ease;
+}
+
+.instructions.collapsed {
+  padding: 10px 15px;
 }
 
 .instructions p {
@@ -466,6 +493,47 @@ const handleShapeCreated = (shape) => {
   margin-bottom: 5px;
 }
 
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pane-header p {
+  margin: 0;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  color: #6c757d;
+}
+
+.collapse-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.pane-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .shapes-info {
   position: absolute;
   top: 10px;
@@ -477,6 +545,13 @@ const handleShapeCreated = (shape) => {
   max-width: 350px;
   max-height: 300px;
   overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+.shapes-info.collapsed {
+  padding: 10px 15px;
+  max-height: none;
+  overflow: visible;
 }
 
 .shapes-info p {
