@@ -103,6 +103,9 @@ const updateCanvasSize = () => {
       const context = canvas.getContext('2d')
       context.scale(dpr, dpr)
       ctx.value = context
+
+      // Redraw the image and shapes after canvas resize
+      redrawCanvas()
     }
   })
 }
