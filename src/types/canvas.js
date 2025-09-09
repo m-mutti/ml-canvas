@@ -50,7 +50,7 @@
 /**
  * @typedef {Object} Shape
  * @property {string} id - Unique shape identifier
- * @property {'rectangle'|'polygon'|'freestyle'} type - Shape type
+ * @property {'rectangle'|'polygon'|'freestyle'|'freeform'} type - Shape type
  * @property {Rectangle|Point[]} canvas - Canvas coordinate data
  * @property {Rectangle|Point[]} image - Original image coordinate data
  * @property {ShapeStyle} style - Shape styling options
@@ -79,6 +79,14 @@
  * @property {'freestyle'} type - Shape type
  * @property {Point[]} canvas - Canvas freestyle path points (simplified)
  * @property {Point[]} image - Original image freestyle path points
+ */
+
+/**
+ * @typedef {Object} FreeformShape
+ * @extends Shape
+ * @property {'freeform'} type - Shape type
+ * @property {Point[]} canvas - Canvas freeform path points (simplified)
+ * @property {Point[]} image - Original image freeform path points
  */
 
 /**
@@ -115,7 +123,18 @@
 
 /**
  * Drawing mode types
- * @typedef {'none'|'rectangle'|'polygon'|'freestyle'|'delete'} DrawingMode
+ * @typedef {'none'|'rectangle'|'polygon'|'freestyle'|'freeform'|'delete'} DrawingMode
+ */
+
+/**
+ * @typedef {Object} ImagePastedData
+ * @property {number} width - Canvas display width
+ * @property {number} height - Canvas display height
+ * @property {number} x - Canvas position x
+ * @property {number} y - Canvas position y
+ * @property {number} originalWidth - Original image width
+ * @property {number} originalHeight - Original image height
+ * @property {HTMLImageElement} image - The image element with original dimensions
  */
 
 /**
@@ -123,13 +142,14 @@
  * @property {function(Shape): void} 'shape-created' - Emitted when a shape is created
  * @property {function(Shape): void} 'shape-removed' - Emitted when a shape is removed
  * @property {function(): void} 'canvas-reset' - Emitted when canvas is completely reset
+ * @property {function(ImagePastedData): void} 'image-pasted' - Emitted when an image is pasted from clipboard
  */
 
 /**
  * @typedef {Object} MLCanvasProps
  * @property {boolean} [pasteEnabled=true] - Enable/disable clipboard paste functionality
  * @property {DrawingMode} [drawingMode='none'] - Current drawing mode
- * @property {number} [freestyleSensitivity=1] - Sensitivity for freestyle drawing (0.1-10)
+ * @property {number} [freestyleSensitivity=1] - Sensitivity for freeform drawing (0.1-10)
  * @property {number} [simplificationTolerance=2] - Path simplification tolerance (0.1-20)
  */
 
@@ -141,7 +161,8 @@
  * @property {function(): void} clearCanvas - Clear entire canvas
  * @property {function(): void} resetCanvas - Reset canvas and clear all data
  * @property {function(): Promise<PasteResult|null>} pasteImage - Paste image from clipboard
- * @property {function(): HTMLImageElement|null} getPastedImage - Get pasted image reference
+ * @property {function(): HTMLImageElement|null} getImage - Get pasted image reference
+ * @property {function(HTMLImageElement, number?, number?, number?, number?, boolean?): Promise<ImageResult>} updateImage - Update canvas image while preserving shapes
  * @property {function(boolean): void} setImagePasteEnabled - Enable/disable paste functionality
  * @property {function(): Shape[]} getDrawnShapes - Get all drawn shapes
  * @property {function(): void} clearDrawnShapes - Clear all drawn shapes

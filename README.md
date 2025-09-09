@@ -5,7 +5,7 @@ A Vue.js canvas component designed specifically for machine learning annotation 
 ## Features
 
 ### 🎯 **ML-Ready Annotation Tools**
-- **Multiple Drawing Modes**: Rectangle, Polygon, and Freestyle drawing for various annotation types
+- **Multiple Drawing Modes**: Rectangle, Polygon, and Freeform drawing for various annotation types
 - **Dual Coordinate Systems**: Canvas coordinates for display, image coordinates for ML model training
 - **Shape Export**: JSON export functionality for training datasets
 - **Event-Driven Architecture**: Real-time shape creation events for custom ML workflows
@@ -18,7 +18,7 @@ A Vue.js canvas component designed specifically for machine learning annotation 
 ### ✏️ **Drawing Capabilities**
 - **Rectangle Tool**: Perfect for object detection bounding boxes
 - **Polygon Tool**: Ideal for image segmentation masks
-- **Freestyle Tool**: Great for freehand annotations with path simplification
+- **Freeform Tool**: Great for freehand annotations with path simplification
 - **Real-time Preview**: Live preview while drawing with visual feedback
 
 ### 🔧 **Developer Features**
@@ -37,7 +37,7 @@ Experience all features of ML Canvas in action:
 **[https://ml-canvas.vercel.app/](https://ml-canvas.vercel.app/)**
 
 The demo includes:
-- Complete annotation interface with Rectangle, Polygon, Freestyle, and Delete modes
+- Complete annotation interface with Rectangle, Polygon, Freeform, and Delete modes
 - Image clipboard paste functionality (Ctrl+V)
 - Real-time shape creation and removal
 - Export functionality for ML datasets
@@ -69,6 +69,7 @@ npm install ml-canvas
     ref="canvasRef"
     :drawingMode="drawingMode"
     @shape-created="handleNewAnnotation"
+    @image-pasted="handleImagePasted"
   />
 </template>
 
@@ -94,6 +95,14 @@ const handleShapeRemoval = (shape) => {
   removeFromMLPipeline(shape.id)
 }
 
+// Handle image paste events
+const handleImagePasted = (imageData) => {
+  console.log('Image pasted:', imageData)
+  console.log('Canvas dimensions:', imageData.width, imageData.height)
+  console.log('Original dimensions:', imageData.originalWidth, imageData.originalHeight)
+  console.log('Image object:', imageData.image)
+}
+
 // Programmatically add images
 const loadImage = async () => {
   await canvasRef.value.addImage('/path/to/image.jpg')
@@ -106,7 +115,7 @@ const loadImage = async () => {
 ### Mode Overview
 ```javascript
 // Available drawing modes
-const modes = ['none', 'rectangle', 'polygon', 'freestyle', 'delete']
+const modes = ['none', 'rectangle', 'polygon', 'freeform', 'delete']
 
 // Set drawing mode
 drawingMode.value = 'delete' // Click to remove shapes
@@ -142,13 +151,13 @@ Ideal for semantic segmentation:
 }
 ```
 
-### Freestyle Mode
+### Freeform Mode
 Great for custom annotations:
 ```javascript
 // Output format
 {
   id: 'shape_3_1672531210000',          // Unique identifier
-  type: 'freestyle',
+  type: 'freeform',
   canvas: [{ x, y }, ...],             // Simplified path points
   image: [{ x, y }, ...],              // Original image coordinates
   style: { strokeStyle, lineWidth, ... }, // Applied styling
@@ -177,9 +186,9 @@ drawingMode.value = 'delete'
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freestyle'`, `'delete'` |
+| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freeform'`, `'delete'` |
 | `pasteEnabled` | Boolean | `true` | Enable/disable image pasting from clipboard |
-| `freestyleSensitivity` | Number | `1` | Point density for freestyle drawing (0.1-10) |
+| `freestyleSensitivity` | Number | `1` | Point density for freeform drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
 
 ### Events
@@ -189,6 +198,7 @@ drawingMode.value = 'delete'
 | `shape-created` | `shape` | Emitted when a new shape is completed |
 | `shape-removed` | `shape` | Emitted when a shape is removed |
 | `canvas-reset` | `void` | Emitted when canvas is completely reset |
+| `image-pasted` | `imageData` | **NEW** Emitted when an image is pasted from clipboard |
 
 ### Methods
 
@@ -196,6 +206,8 @@ drawingMode.value = 'delete'
 |--------|------------|-------------|
 | `addImage(src, x, y, width, height, fitCanvas)` | Image source and positioning | Add image to canvas |
 | `pasteImage()` | None | Paste image from clipboard |
+| `getImage()` | None | Get the current pasted image reference |
+| `updateImage(imageElement, x, y, width, height, fitCanvas)` | HTMLImageElement and positioning | Update canvas with new image while preserving shapes |
 | `clearCanvas()` | None | Clear entire canvas (leaves shapes) |
 | `resetCanvas()` | None | **NEW** Reset everything (image + shapes) |
 | `getDrawnShapes()` | None | Get all drawn shapes with IDs |
@@ -226,6 +238,46 @@ const mousePos = { x: 100, y: 50 }
 const shapeId = canvasRef.value.findShapeAtPosition(mousePos)
 if (shapeId) {
   canvasRef.value.removeShapeById(shapeId)
+}
+```
+
+### Image Management
+```javascript
+// Handle image paste events
+const handleImagePasted = (imageData) => {
+  console.log('Canvas size:', imageData.width, imageData.height)     // Displayed size
+  console.log('Original size:', imageData.originalWidth, imageData.originalHeight) // Actual image dimensions
+  console.log('Position:', imageData.x, imageData.y)                 // Canvas position
+  console.log('Image object:', imageData.image)                      // HTMLImageElement with original dimensions
+  
+  // Use original dimensions for ML training
+  trainModel(imageData.originalWidth, imageData.originalHeight)
+}
+
+// Get current image reference
+const currentImage = canvasRef.value.getImage()
+if (currentImage) {
+  console.log('Current image dimensions:', currentImage.naturalWidth, currentImage.naturalHeight)
+}
+
+// Update image while preserving all shapes
+const updateCanvasImage = async (newImageSrc) => {
+  const img = new Image()
+  img.onload = async () => {
+    try {
+      const result = await canvasRef.value.updateImage(img)
+      console.log('Image updated:', result)
+      // All existing shapes remain intact
+    } catch (error) {
+      console.error('Failed to update image:', error)
+    }
+  }
+  img.src = newImageSrc
+}
+
+// Update with custom positioning (no auto-fit)
+const updateWithCustomPosition = async (imageElement) => {
+  await canvasRef.value.updateImage(imageElement, 50, 100, 200, 150, false)
 }
 ```
 
@@ -286,9 +338,9 @@ const masks = shapes
 
 ### Custom Annotations
 ```javascript
-// Use freestyle mode for specialized tasks
+// Use freeform mode for specialized tasks
 const customAnnotations = shapes
-  .filter(s => s.type === 'freestyle')
+  .filter(s => s.type === 'freeform')
   .map(s => ({
     id: s.id,                    // Unique identifier for tracking
     type: 'gesture',
@@ -342,6 +394,13 @@ The component supports exporting annotations in JSON format compatible with popu
       "class": "car",
       "points": [[x1, y1], [x2, y2], [x3, y3]],
       "timestamp": 1672531205000
+    },
+    {
+      "id": "shape_3_1672531210000",
+      "type": "freeform", 
+      "class": "gesture",
+      "path": [[x1, y1], [x2, y2], [x3, y3]],
+      "timestamp": 1672531210000
     }
   ]
 }
