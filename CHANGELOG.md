@@ -1,3 +1,11 @@
+## [0.1.2](https://github.com/m-mutti/ml-canvas/compare/v0.1.1...v0.1.2) (2025-09-10)
+
+
+### Bug Fixes
+
+* added emit on image paste and added update function ([7cdd10f](https://github.com/m-mutti/ml-canvas/commit/7cdd10fbabb03db8f1ff8b215de2c568d05db860))
+* image getting removed on canvas resize ([b689204](https://github.com/m-mutti/ml-canvas/commit/b689204b50440d5a7da9ba90a3a0759da6cb3373))
+
 ## [0.1.1](https://github.com/m-mutti/ml-canvas/compare/v0.1.0...v0.1.1) (2025-08-25)
 
 
