@@ -25,8 +25,8 @@ const props = defineProps({
   },
   drawingMode: {
     type: String,
-    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'delete'
-    validator: (value) => ['none', 'rectangle', 'polygon', 'freestyle', 'delete'].includes(value),
+    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'
+    validator: (value) => ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'].includes(value),
   },
   freestyleSensitivity: {
     type: Number,
@@ -40,7 +40,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset'])
+const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted'])
 
 const containerRef = ref(null)
 const canvasRef = ref(null)
@@ -70,6 +70,7 @@ const drawingModeCursor = computed(() => {
     case 'rectangle':
     case 'polygon':
     case 'freestyle':
+    case 'freeform':
       return 'crosshair'
     case 'none':
     default:
@@ -102,6 +103,9 @@ const updateCanvasSize = () => {
       const context = canvas.getContext('2d')
       context.scale(dpr, dpr)
       ctx.value = context
+
+      // Redraw the image and shapes after canvas resize
+      redrawCanvas()
     }
   })
 }
@@ -280,7 +284,7 @@ const renderShape = (shape) => {
     }
 
     ctx.value.restore()
-  } else if (type === 'polygon' || type === 'freestyle') {
+  } else if (type === 'polygon' || type === 'freestyle' || type === 'freeform') {
     const points = canvasData
     const {
       fillStyle = null,
@@ -299,7 +303,7 @@ const renderShape = (shape) => {
       ctx.value.setLineDash(lineDash)
     }
 
-    if (type === 'freestyle' && points.length > 2) {
+    if ((type === 'freestyle' || type === 'freeform') && points.length > 2) {
       // Use smooth curves for freestyle shapes
       drawSmoothPath(ctx.value, points, closePath)
     } else {
@@ -362,6 +366,17 @@ const pasteImage = async (x = 0, y = 0, width = null, height = null, fitCanvas =
           // Clean up the blob URL
           URL.revokeObjectURL(imageUrl)
 
+          // Emit image pasted event
+          emit('image-pasted', {
+            width: result.width,
+            height: result.height,
+            x: result.x,
+            y: result.y,
+            originalWidth: img.naturalWidth,
+            originalHeight: img.naturalHeight,
+            image: img
+          })
+
           return result
         }
       }
@@ -410,6 +425,17 @@ const handlePaste = async (event) => {
         // Clean up the blob URL
         URL.revokeObjectURL(imageUrl)
 
+        // Emit image pasted event
+        emit('image-pasted', {
+          width: result.width,
+          height: result.height,
+          x: result.x,
+          y: result.y,
+          originalWidth: img.naturalWidth,
+          originalHeight: img.naturalHeight,
+          image: img
+        })
+
         return result
       }
     }
@@ -420,7 +446,62 @@ const setImagePasteEnabled = (enabled) => {
   imagePasteEnabled.value = enabled
 }
 
-const getPastedImage = () => pastedImage.value
+const getImage = () => pastedImage.value
+
+const updateImage = async (imageElement, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
+  if (!ctx.value || !imageElement) return
+
+  return new Promise((resolve, reject) => {
+    try {
+      let drawWidth = width || imageElement.naturalWidth
+      let drawHeight = height || imageElement.naturalHeight
+
+      // Fit image to canvas while maintaining aspect ratio
+      if (fitCanvas && (width === null || height === null)) {
+        const canvasAspect = canvasWidth.value / canvasHeight.value
+        const imageAspect = imageElement.naturalWidth / imageElement.naturalHeight
+
+        if (imageAspect > canvasAspect) {
+          // Image is wider relative to canvas
+          drawWidth = canvasWidth.value
+          drawHeight = canvasWidth.value / imageAspect
+        } else {
+          // Image is taller relative to canvas
+          drawHeight = canvasHeight.value
+          drawWidth = canvasHeight.value * imageAspect
+        }
+
+        // Center the image
+        x = (canvasWidth.value - drawWidth) / 2
+        y = (canvasHeight.value - drawHeight) / 2
+      }
+
+      // Clear canvas and redraw with new image
+      clearCanvas()
+      ctx.value.drawImage(imageElement, x, y, drawWidth, drawHeight)
+
+      // Update stored image reference and info
+      pastedImage.value = imageElement
+      imageInfo.value = {
+        canvasX: x,
+        canvasY: y,
+        canvasWidth: drawWidth,
+        canvasHeight: drawHeight,
+        originalWidth: imageElement.naturalWidth,
+        originalHeight: imageElement.naturalHeight,
+      }
+
+      // Redraw all existing shapes on top of new image
+      drawnShapes.value.forEach((shape) => {
+        renderShape(shape)
+      })
+
+      resolve({ width: drawWidth, height: drawHeight, x, y })
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
 
 // Mouse event handlers
 const getMousePos = (event) => {
@@ -485,7 +566,7 @@ const handleMouseDown = (event) => {
     isDrawing.value = true
   } else if (props.drawingMode === 'polygon') {
     polygonPoints.value.push(mousePos)
-  } else if (props.drawingMode === 'freestyle') {
+  } else if (props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') {
     isDrawing.value = true
     freestylePath.value = [mousePos]
   }
@@ -503,7 +584,7 @@ const handleMouseMove = (event) => {
   } else if (props.drawingMode === 'polygon' && polygonPoints.value.length > 0) {
     redrawCanvas()
     drawPreviewPolygon()
-  } else if (props.drawingMode === 'freestyle' && isDrawing.value) {
+  } else if ((props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') && isDrawing.value) {
     // Add point to path if it's far enough from the last point
     const lastPoint = freestylePath.value[freestylePath.value.length - 1]
     const distance = Math.sqrt(
@@ -528,7 +609,7 @@ const handleMouseUp = () => {
     if (shape) {
       redrawCanvas()
     }
-  } else if (props.drawingMode === 'freestyle' && isDrawing.value) {
+  } else if ((props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') && isDrawing.value) {
     console.log('Freestyle mouse up, path length:', freestylePath.value.length)
     isDrawing.value = false
     const shape = createFreestyleShape()
@@ -652,8 +733,9 @@ const createFreestyleShape = () => {
 
   console.log('Creating freestyle shape with', imagePoints.length, 'points')
 
-  // Use common storage function
-  return storeShape('freestyle', simplifiedPath, imagePoints, {
+  // Use common storage function with current drawing mode
+  const shapeType = props.drawingMode === 'freeform' ? 'freeform' : 'freestyle'
+  return storeShape(shapeType, simplifiedPath, imagePoints, {
     fillStyle: null,
     strokeStyle: '#0066ff',
     lineWidth: 2,
@@ -864,7 +946,7 @@ const findShapeAtPosition = (mousePos) => {
       ) {
         return shape.id
       }
-    } else if (shape.type === 'polygon' || shape.type === 'freestyle') {
+    } else if (shape.type === 'polygon' || shape.type === 'freestyle' || shape.type === 'freeform') {
       if (isPointInPolygon(mousePos, shape.canvas)) {
         return shape.id
       }
@@ -985,7 +1067,8 @@ defineExpose({
   getCanvas,
   getCanvasSize,
   pasteImage,
-  getPastedImage,
+  getImage,
+  updateImage,
   setImagePasteEnabled,
   getDrawnShapes,
   clearDrawnShapes,
