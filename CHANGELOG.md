@@ -1,3 +1,10 @@
+## [0.1.3](https://github.com/m-mutti/ml-canvas/compare/v0.1.2...v0.1.3) (2025-09-18)
+
+
+### Bug Fixes
+
+* canvas scaling to 2x size due to dpr ([2488aae](https://github.com/m-mutti/ml-canvas/commit/2488aaeb62ad0b419198decd9878d970a1539e46))
+
 ## [0.1.2](https://github.com/m-mutti/ml-canvas/compare/v0.1.1...v0.1.2) (2025-09-10)
 
 
