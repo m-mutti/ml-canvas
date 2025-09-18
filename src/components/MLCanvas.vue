@@ -26,7 +26,8 @@ const props = defineProps({
   drawingMode: {
     type: String,
     default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'
-    validator: (value) => ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'].includes(value),
+    validator: (value) =>
+      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'].includes(value),
   },
   freestyleSensitivity: {
     type: Number,
@@ -83,7 +84,7 @@ const updateCanvasSize = () => {
 
   const container = containerRef.value
   const rect = container.getBoundingClientRect()
-
+  console.log('Container resized to:', rect.width, 'x', rect.height)
   const newWidth = Math.floor(rect.width)
   const newHeight = Math.floor(rect.height)
 
@@ -95,13 +96,11 @@ const updateCanvasSize = () => {
   nextTick(() => {
     if (canvasRef.value) {
       const canvas = canvasRef.value
-      const dpr = window.devicePixelRatio || 1
 
-      canvas.width = newWidth * dpr
-      canvas.height = newHeight * dpr
+      canvas.width = newWidth
+      canvas.height = newHeight
 
       const context = canvas.getContext('2d')
-      context.scale(dpr, dpr)
       ctx.value = context
 
       // Redraw the image and shapes after canvas resize
@@ -374,7 +373,7 @@ const pasteImage = async (x = 0, y = 0, width = null, height = null, fitCanvas =
             y: result.y,
             originalWidth: img.naturalWidth,
             originalHeight: img.naturalHeight,
-            image: img
+            image: img,
           })
 
           return result
@@ -433,7 +432,7 @@ const handlePaste = async (event) => {
           y: result.y,
           originalWidth: img.naturalWidth,
           originalHeight: img.naturalHeight,
-          image: img
+          image: img,
         })
 
         return result
@@ -448,7 +447,14 @@ const setImagePasteEnabled = (enabled) => {
 
 const getImage = () => pastedImage.value
 
-const updateImage = async (imageElement, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
+const updateImage = async (
+  imageElement,
+  x = 0,
+  y = 0,
+  width = null,
+  height = null,
+  fitCanvas = true,
+) => {
   if (!ctx.value || !imageElement) return
 
   return new Promise((resolve, reject) => {
@@ -506,12 +512,10 @@ const updateImage = async (imageElement, x = 0, y = 0, width = null, height = nu
 // Mouse event handlers
 const getMousePos = (event) => {
   const rect = canvasRef.value.getBoundingClientRect()
-  const scaleX = canvasRef.value.width / rect.width
-  const scaleY = canvasRef.value.height / rect.height
 
   return {
-    x: ((event.clientX - rect.left) * scaleX) / (window.devicePixelRatio || 1),
-    y: ((event.clientY - rect.top) * scaleY) / (window.devicePixelRatio || 1),
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
   }
 }
 
@@ -584,7 +588,10 @@ const handleMouseMove = (event) => {
   } else if (props.drawingMode === 'polygon' && polygonPoints.value.length > 0) {
     redrawCanvas()
     drawPreviewPolygon()
-  } else if ((props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') && isDrawing.value) {
+  } else if (
+    (props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') &&
+    isDrawing.value
+  ) {
     // Add point to path if it's far enough from the last point
     const lastPoint = freestylePath.value[freestylePath.value.length - 1]
     const distance = Math.sqrt(
@@ -609,7 +616,10 @@ const handleMouseUp = () => {
     if (shape) {
       redrawCanvas()
     }
-  } else if ((props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') && isDrawing.value) {
+  } else if (
+    (props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') &&
+    isDrawing.value
+  ) {
     console.log('Freestyle mouse up, path length:', freestylePath.value.length)
     isDrawing.value = false
     const shape = createFreestyleShape()
@@ -946,7 +956,11 @@ const findShapeAtPosition = (mousePos) => {
       ) {
         return shape.id
       }
-    } else if (shape.type === 'polygon' || shape.type === 'freestyle' || shape.type === 'freeform') {
+    } else if (
+      shape.type === 'polygon' ||
+      shape.type === 'freestyle' ||
+      shape.type === 'freeform'
+    ) {
       if (isPointInPolygon(mousePos, shape.canvas)) {
         return shape.id
       }
