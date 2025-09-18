@@ -8,15 +8,24 @@
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
       @mouseup="handleMouseUp"
+      @mouseleave="handleMouseLeave"
       @dblclick="handleDoubleClick"
       @contextmenu="handleRightClick"
       :style="{ cursor: drawingModeCursor }"
     ></canvas>
+    <div
+      ref="magnifierRef"
+      class="magnifier"
+      :class="{ visible: magnifierVisible && props.magnifierEnabled }"
+    >
+      <canvas ref="magnifierCanvasRef" class="magnifier-canvas"></canvas>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch, computed } from 'vue'
+import { ensureStylesInjected } from '../style-injector.js'
 
 const props = defineProps({
   pasteEnabled: {
@@ -39,6 +48,10 @@ const props = defineProps({
     default: 2, // Tolerance for path simplification algorithm
     validator: (value) => value >= 0.1 && value <= 20,
   },
+  magnifierEnabled: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted'])
@@ -60,6 +73,12 @@ const freestylePath = ref([])
 const drawnShapes = ref([])
 const imageInfo = ref(null) // Stores image position and scale info
 let shapeIdCounter = 0 // Counter for generating unique shape IDs
+
+// Magnifier state
+const magnifierRef = ref(null)
+const magnifierCanvasRef = ref(null)
+const magnifierCtx = ref(null)
+const magnifierVisible = ref(false)
 
 let resizeTimeout = null
 
@@ -102,6 +121,9 @@ const updateCanvasSize = () => {
       const context = canvas.getContext('2d')
       ctx.value = context
 
+      // Initialize magnifier canvas
+      initializeMagnifierCanvas()
+
       // Redraw the image and shapes after canvas resize
       redrawCanvas()
     }
@@ -113,6 +135,72 @@ const debouncedResize = () => {
     clearTimeout(resizeTimeout)
   }
   resizeTimeout = setTimeout(updateCanvasSize, 100)
+}
+
+const initializeMagnifierCanvas = () => {
+  if (!magnifierCanvasRef.value) return
+
+  const magnifierCanvas = magnifierCanvasRef.value
+  magnifierCanvas.width = 200
+  magnifierCanvas.height = 200
+  magnifierCtx.value = magnifierCanvas.getContext('2d')
+}
+
+const updateMagnifier = (event) => {
+  if (!props.magnifierEnabled || !magnifierCtx.value || !canvasRef.value) {
+    magnifierVisible.value = false
+    return
+  }
+
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+  const scaleX = canvas.width / rect.width
+  const scaleY = canvas.height / rect.height
+  const x = (event.clientX - rect.left) * scaleX
+  const y = (event.clientY - rect.top) * scaleY
+
+  magnifierVisible.value = true
+
+  // Position magnifier
+  if (magnifierRef.value) {
+    magnifierRef.value.style.left = event.clientX + 20 + 'px'
+    magnifierRef.value.style.top = event.clientY - 110 + 'px'
+
+    // Adjust magnifier position if too close to edge
+    if (event.clientX > window.innerWidth - 250) {
+      magnifierRef.value.style.left = event.clientX - 220 + 'px'
+    }
+    if (event.clientY < 150) {
+      magnifierRef.value.style.top = event.clientY + 20 + 'px'
+    }
+  }
+
+  // Draw magnified view
+  const magnification = 3
+  const sourceSize = 200 / magnification
+
+  magnifierCtx.value.clearRect(0, 0, 200, 200)
+  magnifierCtx.value.drawImage(
+    canvas,
+    Math.max(0, x - sourceSize / 2),
+    Math.max(0, y - sourceSize / 2),
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    200,
+    200,
+  )
+
+  // Draw crosshair
+  magnifierCtx.value.strokeStyle = '#667eea'
+  magnifierCtx.value.lineWidth = 1
+  magnifierCtx.value.beginPath()
+  magnifierCtx.value.moveTo(100, 0)
+  magnifierCtx.value.lineTo(100, 200)
+  magnifierCtx.value.moveTo(0, 100)
+  magnifierCtx.value.lineTo(200, 100)
+  magnifierCtx.value.stroke()
 }
 
 const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -576,6 +664,9 @@ const handleMouseDown = (event) => {
 }
 
 const handleMouseMove = (event) => {
+  // Update magnifier regardless of drawing mode
+  updateMagnifier(event)
+
   if (props.drawingMode === 'none' || props.drawingMode === 'delete') return
 
   const mousePos = getMousePos(event)
@@ -633,6 +724,10 @@ const handleMouseUp = () => {
       redrawCanvas()
     }
   }
+}
+
+const handleMouseLeave = () => {
+  magnifierVisible.value = false
 }
 
 const handleDoubleClick = () => {
@@ -1057,9 +1152,14 @@ const getCanvasSize = () => ({
 })
 
 onMounted(() => {
+  ensureStylesInjected()
   window.addEventListener('resize', debouncedResize)
   window.addEventListener('paste', handlePaste)
   updateCanvasSize()
+
+  nextTick(() => {
+    initializeMagnifierCanvas()
+  })
 })
 
 onUnmounted(() => {
@@ -1069,6 +1169,12 @@ onUnmounted(() => {
     clearTimeout(resizeTimeout)
   }
 })
+
+const setMagnifierEnabled = (enabled) => {
+  if (!enabled) {
+    magnifierVisible.value = false
+  }
+}
 
 defineExpose({
   addImage,
@@ -1091,19 +1197,8 @@ defineExpose({
   findShapeById,
   renderShape,
   storeShape,
+  setMagnifierEnabled,
 })
 </script>
 
-<style scoped>
-.ml-canvas-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
 
-.ml-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-</style>

@@ -9,7 +9,8 @@
     ".": {
       "import": "./dist/ml-canvas.es.js",
       "require": "./dist/ml-canvas.umd.js"
-    }
+    },
+    "./style.css": "./dist/ml-canvas.css"
   },
   "files": [
     "dist",

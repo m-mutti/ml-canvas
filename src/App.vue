@@ -110,6 +110,7 @@ const instructionsCollapsed = ref(false)
 const dataViewCollapsed = ref(false)
 const freestyleSensitivity = ref(1.0)
 const simplificationTolerance = ref(2.0)
+const magnifierEnabled = ref(false)
 
 const setDrawingMode = (mode) => {
   drawingMode.value = mode
@@ -143,6 +144,12 @@ const exportShapes = () => {
   URL.revokeObjectURL(url)
 }
 
+const toggleMagnifier = () => {
+  magnifierEnabled.value = !magnifierEnabled.value
+  if (!canvasRef.value) return
+  canvasRef.value.setMagnifierEnabled(magnifierEnabled.value)
+}
+
 const handleShapeCreated = (shape) => {
   console.log('New shape created:', shape)
   // Perform any actions you want when a shape is created
@@ -164,6 +171,13 @@ const handleShapeCreated = (shape) => {
           :class="{ disabled: !pasteEnabled }"
         >
           {{ pasteEnabled ? 'Disable' : 'Enable' }} Paste
+        </button>
+        <button
+          @click="toggleMagnifier"
+          class="btn btn-magnifier"
+          :class="{ active: magnifierEnabled }"
+        >
+          {{ magnifierEnabled ? 'Disable' : 'Enable' }} Magnifier
         </button>
         <button @click="clearCanvas" class="btn btn-clear">Clear Canvas</button>
         <button @click="resetCanvas" class="btn btn-reset">Reset All</button>
@@ -215,6 +229,7 @@ const handleShapeCreated = (shape) => {
           ref="canvasRef"
           :pasteEnabled="pasteEnabled"
           :drawingMode="drawingMode"
+          :magnifierEnabled="magnifierEnabled"
           @shape-created="handleShapeCreated"
         />
         <div class="instructions" :class="{ collapsed: instructionsCollapsed }">
@@ -397,6 +412,22 @@ const handleShapeCreated = (shape) => {
 
 .btn-toggle.disabled:hover {
   background: #c82333;
+}
+
+.btn-magnifier {
+  background: #6f42c1;
+}
+
+.btn-magnifier:hover {
+  background: #5a32a3;
+}
+
+.btn-magnifier.active {
+  background: #28a745;
+}
+
+.btn-magnifier.active:hover {
+  background: #218838;
 }
 
 .btn-mode {

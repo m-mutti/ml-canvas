@@ -32,9 +32,14 @@ export default defineConfig(({ mode }) => {
         output: {
           globals: {
             vue: 'Vue'
+          },
+          assetFileNames: (assetInfo) => {
+            if (assetInfo.name === 'style.css') return 'ml-canvas.css'
+            return assetInfo.name
           }
         }
-      }
+      },
+      cssCodeSplit: false
     } : undefined
   }
 })
