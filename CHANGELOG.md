@@ -1,3 +1,10 @@
+# [0.2.0](https://github.com/m-mutti/ml-canvas/compare/v0.1.3...v0.2.0) (2025-09-18)
+
+
+### Features
+
+* added magnifier and fixed css not being exported ([d97a980](https://github.com/m-mutti/ml-canvas/commit/d97a9800c5b24bf305bb16946842e9ace21e49c6))
+
 ## [0.1.3](https://github.com/m-mutti/ml-canvas/compare/v0.1.2...v0.1.3) (2025-09-18)
 
 
