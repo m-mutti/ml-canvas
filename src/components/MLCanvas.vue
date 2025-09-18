@@ -84,7 +84,6 @@ const updateCanvasSize = () => {
 
   const container = containerRef.value
   const rect = container.getBoundingClientRect()
-  console.log('Container resized to:', rect.width, 'x', rect.height)
   const newWidth = Math.floor(rect.width)
   const newHeight = Math.floor(rect.height)
 
