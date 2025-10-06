@@ -257,20 +257,19 @@ const drawRectangle = (x, y, width, height, options = {}) => {
 
   const { fillStyle = null, strokeStyle = '#000000', lineWidth = 1, lineDash = [] } = options
 
-  // Create canvas and image coordinate data
-  const canvasRect = { x, y, width, height }
-  const topLeft = scaleToImageCoordinates(x, y)
-  const bottomRight = scaleToImageCoordinates(x + width, y + height)
+  // Image coordinate data (what was passed in)
+  const imageData = { x, y, width, height }
 
-  const imageData =
-    topLeft && bottomRight
-      ? {
-          x: topLeft.x,
-          y: topLeft.y,
-          width: bottomRight.x - topLeft.x,
-          height: bottomRight.y - topLeft.y,
-        }
-      : canvasRect
+  // Convert to canvas coordinates
+  const topLeft = scaleToCanvasCoordinates(x, y)
+  const bottomRight = scaleToCanvasCoordinates(x + width, y + height)
+
+  const canvasRect = {
+    x: topLeft.x,
+    y: topLeft.y,
+    width: bottomRight.x - topLeft.x,
+    height: bottomRight.y - topLeft.y,
+  }
 
   // Store shape using common function
   const shape = storeShape('rectangle', canvasRect, imageData, {
@@ -286,8 +285,31 @@ const drawRectangle = (x, y, width, height, options = {}) => {
   return shape
 }
 
+const scaleToCanvasCoordinates = (imageX, imageY) => {
+  if (!imageInfo.value) return { x: imageX, y: imageY }
+
+  const {
+    canvasX: imgX,
+    canvasY: imgY,
+    canvasWidth: imgW,
+    canvasHeight: imgH,
+    originalWidth,
+    originalHeight,
+  } = imageInfo.value
+
+  // Scale from image coordinates to canvas coordinates
+  const relativeX = imageX / originalWidth
+  const relativeY = imageY / originalHeight
+
+  return {
+    x: imgX + relativeX * imgW,
+    y: imgY + relativeY * imgH,
+  }
+}
+
 const drawPolygon = (points, options = {}) => {
   if (!ctx.value || !points || points.length < 3) return
+  console.log('(MLCANVAS) Drawing polygon with points:', points)
 
   const {
     fillStyle = null,
@@ -297,19 +319,18 @@ const drawPolygon = (points, options = {}) => {
     closePath = true,
   } = options
 
-  // Create image coordinate data
-  const imagePoints = points.map((p) => scaleToImageCoordinates(p.x, p.y)).filter((p) => p !== null)
-  const imageData = imagePoints.length > 0 ? imagePoints : points
+  // Convert image coordinates to canvas coordinates
+  const canvasPoints = points.map((p) => scaleToCanvasCoordinates(p.x, p.y))
 
-  // Store shape using common function
-  const shape = storeShape('polygon', points, imageData, {
+  // Store shape using common function (canvasPoints for rendering, points for image data)
+  const shape = storeShape('polygon', canvasPoints, points, {
     fillStyle,
     strokeStyle,
     lineWidth,
     lineDash,
     closePath,
   })
-
+  console.log('(MLCANVAS) Polygon shape created with ID:', shape.id)
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
 
@@ -1200,5 +1221,3 @@ defineExpose({
   setMagnifierEnabled,
 })
 </script>
-
-
