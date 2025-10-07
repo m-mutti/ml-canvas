@@ -1,3 +1,15 @@
+# [0.3.0](https://github.com/m-mutti/ml-canvas/compare/v0.2.1...v0.3.0) (2025-10-07)
+
+
+### Bug Fixes
+
+* convert coords to canvas coords when drawing using drawPolygon/drawRectangle [skip ci] ([60cb972](https://github.com/m-mutti/ml-canvas/commit/60cb972e9475e268ccd8ce73aabfec0bd579b6cd))
+
+
+### Features
+
+* added inspect mode ([91a01fe](https://github.com/m-mutti/ml-canvas/commit/91a01feca4eaafff2f66a25e9460cc2cb33f84c9))
+
 ## [0.2.1](https://github.com/m-mutti/ml-canvas/compare/v0.2.0...v0.2.1) (2025-09-19)
 
 
