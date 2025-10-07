@@ -20,6 +20,13 @@
     >
       <canvas ref="magnifierCanvasRef" class="magnifier-canvas"></canvas>
     </div>
+    <div
+      ref="inspectRef"
+      class="inspect-popup"
+      :class="{ visible: inspectVisible && props.drawingMode === 'inspect' }"
+    >
+      <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
+    </div>
   </div>
 </template>
 
@@ -34,9 +41,9 @@ const props = defineProps({
   },
   drawingMode: {
     type: String,
-    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'
+    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'
     validator: (value) =>
-      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete'].includes(value),
+      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'].includes(value),
   },
   freestyleSensitivity: {
     type: Number,
@@ -51,6 +58,11 @@ const props = defineProps({
   magnifierEnabled: {
     type: Boolean,
     default: false,
+  },
+  inspectPadding: {
+    type: Number,
+    default: 20, // Padding around shape in inspect mode (in image pixels)
+    validator: (value) => value >= 0 && value <= 100,
   },
 })
 
@@ -80,6 +92,13 @@ const magnifierCanvasRef = ref(null)
 const magnifierCtx = ref(null)
 const magnifierVisible = ref(false)
 
+// Inspect mode state
+const inspectRef = ref(null)
+const inspectCanvasRef = ref(null)
+const inspectCtx = ref(null)
+const inspectVisible = ref(false)
+const hoveredShapeId = ref(null)
+
 let resizeTimeout = null
 
 // Computed cursor style based on drawing mode
@@ -87,6 +106,8 @@ const drawingModeCursor = computed(() => {
   switch (props.drawingMode) {
     case 'delete':
       return 'not-allowed'
+    case 'inspect':
+      return 'pointer'
     case 'rectangle':
     case 'polygon':
     case 'freestyle':
@@ -124,6 +145,9 @@ const updateCanvasSize = () => {
       // Initialize magnifier canvas
       initializeMagnifierCanvas()
 
+      // Initialize inspect canvas
+      initializeInspectCanvas()
+
       // Redraw the image and shapes after canvas resize
       redrawCanvas()
     }
@@ -144,6 +168,15 @@ const initializeMagnifierCanvas = () => {
   magnifierCanvas.width = 200
   magnifierCanvas.height = 200
   magnifierCtx.value = magnifierCanvas.getContext('2d')
+}
+
+const initializeInspectCanvas = () => {
+  if (!inspectCanvasRef.value) return
+
+  const inspectCanvas = inspectCanvasRef.value
+  inspectCanvas.width = 400
+  inspectCanvas.height = 400
+  inspectCtx.value = inspectCanvas.getContext('2d')
 }
 
 const updateMagnifier = (event) => {
@@ -201,6 +234,134 @@ const updateMagnifier = (event) => {
   magnifierCtx.value.moveTo(0, 100)
   magnifierCtx.value.lineTo(200, 100)
   magnifierCtx.value.stroke()
+}
+
+const getBoundingBox = (shape) => {
+  if (shape.type === 'rectangle') {
+    return shape.image
+  } else if (shape.type === 'polygon' || shape.type === 'freestyle' || shape.type === 'freeform') {
+    const points = shape.image
+    if (!points || points.length === 0) return null
+
+    const xs = points.map((p) => p.x)
+    const ys = points.map((p) => p.y)
+
+    return {
+      x: Math.min(...xs),
+      y: Math.min(...ys),
+      width: Math.max(...xs) - Math.min(...xs),
+      height: Math.max(...ys) - Math.min(...ys),
+    }
+  }
+  return null
+}
+
+const updateInspect = (event) => {
+  if (props.drawingMode !== 'inspect' || !inspectCtx.value || !canvasRef.value || !pastedImage.value || !imageInfo.value) {
+    inspectVisible.value = false
+    hoveredShapeId.value = null
+    return
+  }
+
+  const mousePos = getMousePos(event)
+  const shapeId = findShapeAtPosition(mousePos)
+
+  if (!shapeId) {
+    inspectVisible.value = false
+    hoveredShapeId.value = null
+    return
+  }
+
+  hoveredShapeId.value = shapeId
+  const shape = findShapeById(shapeId)
+  if (!shape) {
+    inspectVisible.value = false
+    return
+  }
+
+  const bbox = getBoundingBox(shape)
+  if (!bbox) {
+    inspectVisible.value = false
+    return
+  }
+
+  inspectVisible.value = true
+
+  // Position inspect popup
+  if (inspectRef.value) {
+    inspectRef.value.style.left = event.clientX + 20 + 'px'
+    inspectRef.value.style.top = event.clientY - 220 + 'px'
+
+    // Adjust position if too close to edge
+    if (event.clientX > window.innerWidth - 450) {
+      inspectRef.value.style.left = event.clientX - 420 + 'px'
+    }
+    if (event.clientY < 250) {
+      inspectRef.value.style.top = event.clientY + 20 + 'px'
+    }
+  }
+
+  // Draw the cropped image area with padding
+  const padding = props.inspectPadding
+  const cropX = Math.max(0, bbox.x - padding)
+  const cropY = Math.max(0, bbox.y - padding)
+  const cropWidth = Math.min(bbox.width + padding * 2, imageInfo.value.originalWidth - cropX)
+  const cropHeight = Math.min(bbox.height + padding * 2, imageInfo.value.originalHeight - cropY)
+
+  inspectCtx.value.clearRect(0, 0, 400, 400)
+
+  // Calculate scale to fit in popup (max 400x400)
+  const scale = Math.min(400 / cropWidth, 400 / cropHeight)
+  const drawWidth = cropWidth * scale
+  const drawHeight = cropHeight * scale
+  const offsetX = (400 - drawWidth) / 2
+  const offsetY = (400 - drawHeight) / 2
+
+  // Draw the cropped image
+  inspectCtx.value.drawImage(
+    pastedImage.value,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    offsetX,
+    offsetY,
+    drawWidth,
+    drawHeight,
+  )
+
+  // Draw the shape outline
+  inspectCtx.value.save()
+
+  // Transform context to match the scaled crop area
+  inspectCtx.value.translate(offsetX, offsetY)
+  inspectCtx.value.scale(scale, scale)
+  inspectCtx.value.translate(-cropX, -cropY)
+
+  // Draw the shape
+  if (shape.type === 'rectangle') {
+    const rect = shape.image
+    inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
+    inspectCtx.value.lineWidth = 3 / scale
+    inspectCtx.value.strokeRect(rect.x, rect.y, rect.width, rect.height)
+  } else if (shape.type === 'polygon' || shape.type === 'freestyle' || shape.type === 'freeform') {
+    const points = shape.image
+    if (points && points.length > 0) {
+      inspectCtx.value.beginPath()
+      inspectCtx.value.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length; i++) {
+        inspectCtx.value.lineTo(points[i].x, points[i].y)
+      }
+      if (shape.style.closePath) {
+        inspectCtx.value.closePath()
+      }
+      inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
+      inspectCtx.value.lineWidth = 3 / scale
+      inspectCtx.value.stroke()
+    }
+  }
+
+  inspectCtx.value.restore()
 }
 
 const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -688,6 +849,12 @@ const handleMouseMove = (event) => {
   // Update magnifier regardless of drawing mode
   updateMagnifier(event)
 
+  // Update inspect popup in inspect mode
+  if (props.drawingMode === 'inspect') {
+    updateInspect(event)
+    return
+  }
+
   if (props.drawingMode === 'none' || props.drawingMode === 'delete') return
 
   const mousePos = getMousePos(event)
@@ -749,6 +916,8 @@ const handleMouseUp = () => {
 
 const handleMouseLeave = () => {
   magnifierVisible.value = false
+  inspectVisible.value = false
+  hoveredShapeId.value = null
 }
 
 const handleDoubleClick = () => {
@@ -1154,11 +1323,16 @@ watch(
 watch(
   () => props.drawingMode,
   (newMode) => {
-    if (newMode === 'none' || newMode === 'delete') {
-      // Reset drawing state when exiting drawing mode or entering delete mode
+    if (newMode === 'none' || newMode === 'delete' || newMode === 'inspect') {
+      // Reset drawing state when exiting drawing mode or entering delete/inspect mode
       isDrawing.value = false
       polygonPoints.value = []
       freestylePath.value = []
+    }
+    if (newMode !== 'inspect') {
+      // Hide inspect popup when not in inspect mode
+      inspectVisible.value = false
+      hoveredShapeId.value = null
     }
   },
 )
@@ -1180,6 +1354,7 @@ onMounted(() => {
 
   nextTick(() => {
     initializeMagnifierCanvas()
+    initializeInspectCanvas()
   })
 })
 

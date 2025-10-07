@@ -115,11 +115,12 @@ const loadImage = async () => {
 ### Mode Overview
 ```javascript
 // Available drawing modes
-const modes = ['none', 'rectangle', 'polygon', 'freeform', 'delete']
+const modes = ['none', 'rectangle', 'polygon', 'freeform', 'delete', 'inspect']
 
 // Set drawing mode
 drawingMode.value = 'delete' // Click to remove shapes
 drawingMode.value = 'rectangle' // Draw rectangles
+drawingMode.value = 'inspect' // Inspect mode with magnified view
 drawingMode.value = 'none' // No interaction
 ```
 
@@ -180,16 +181,34 @@ drawingMode.value = 'delete'
 // Triggers 'shape-removed' event with the deleted shape data
 ```
 
+### Inspect Mode
+Magnified view for detailed inspection:
+```javascript
+// Set to inspect mode
+drawingMode.value = 'inspect'
+
+// Features:
+// - Hover over the canvas to see a magnified popup view
+// - Shows the area around the cursor with zoom
+// - Displays all shapes in the zoomed region
+// - Useful for precise inspection of annotations
+// - Popup follows mouse cursor with smart positioning
+
+// Customize padding around inspected area (in image pixels)
+inspectPadding.value = 20 // Default is 20 pixels
+```
+
 ## API Reference
 
 ### Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freeform'`, `'delete'` |
+| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freeform'`, `'delete'`, `'inspect'` |
 | `pasteEnabled` | Boolean | `true` | Enable/disable image pasting from clipboard |
 | `freestyleSensitivity` | Number | `1` | Point density for freeform drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
+| `inspectPadding` | Number | `20` | Padding around shape in inspect mode (in image pixels) |
 
 ### Events
 
