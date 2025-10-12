@@ -48,6 +48,13 @@
  */
 
 /**
+ * @typedef {Object} Statistic
+ * @property {string} name - Name of the statistic
+ * @property {string} type - Type/category of the statistic
+ * @property {string|number} value - Value of the statistic
+ */
+
+/**
  * @typedef {Object} Shape
  * @property {string} id - Unique shape identifier
  * @property {'rectangle'|'polygon'|'freestyle'|'freeform'} type - Shape type
@@ -55,6 +62,8 @@
  * @property {Rectangle|Point[]} image - Original image coordinate data
  * @property {ShapeStyle} style - Shape styling options
  * @property {number} timestamp - Creation timestamp
+ * @property {number} index - 1-based index indicating order of creation
+ * @property {Statistic[]} [displayStatistics] - Optional array of statistics to display in inspect mode
  */
 
 /**
@@ -151,6 +160,7 @@
  * @property {DrawingMode} [drawingMode='none'] - Current drawing mode
  * @property {number} [freestyleSensitivity=1] - Sensitivity for freeform drawing (0.1-10)
  * @property {number} [simplificationTolerance=2] - Path simplification tolerance (0.1-20)
+ * @property {boolean} [showIndex=false] - Show 1-based index number on each shape
  */
 
 /**

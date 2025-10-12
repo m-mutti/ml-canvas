@@ -42,7 +42,7 @@ function injectCSS() {
 .inspect-popup {
   position: fixed;
   width: 400px;
-  height: 400px;
+  min-height: 400px;
   border: 3px solid #00ff00;
   border-radius: 8px;
   pointer-events: none;
@@ -50,7 +50,7 @@ function injectCSS() {
   z-index: 1001;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
   background: white;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .inspect-popup.visible {
@@ -61,6 +61,42 @@ function injectCSS() {
   position: absolute;
   width: 400px;
   height: 400px;
+}
+
+.inspect-statistics {
+  position: relative;
+  width: 100%;
+  margin-top: 400px;
+  padding: 12px;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+}
+
+.statistics-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statistic-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.stat-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-value {
+  color: #666;
+  margin-left: auto;
 }`
 
   if (typeof document !== 'undefined') {

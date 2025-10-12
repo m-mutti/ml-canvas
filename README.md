@@ -209,6 +209,7 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `freestyleSensitivity` | Number | `1` | Point density for freeform drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
 | `inspectPadding` | Number | `20` | Padding around shape in inspect mode (in image pixels) |
+| `showIndex` | Boolean | `false` | Show 1-based index number on each shape |
 
 ### Events
 
@@ -217,7 +218,7 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `shape-created` | `shape` | Emitted when a new shape is completed |
 | `shape-removed` | `shape` | Emitted when a shape is removed |
 | `canvas-reset` | `void` | Emitted when canvas is completely reset |
-| `image-pasted` | `imageData` | **NEW** Emitted when an image is pasted from clipboard |
+| `image-pasted` | `imageData` | Emitted when an image is pasted from clipboard |
 
 ### Methods
 
@@ -228,17 +229,17 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `getImage()` | None | Get the current pasted image reference |
 | `updateImage(imageElement, x, y, width, height, fitCanvas)` | HTMLImageElement and positioning | Update canvas with new image while preserving shapes |
 | `clearCanvas()` | None | Clear entire canvas (leaves shapes) |
-| `resetCanvas()` | None | **NEW** Reset everything (image + shapes) |
+| `resetCanvas()` | None | Reset everything (image + shapes) |
 | `getDrawnShapes()` | None | Get all drawn shapes with IDs |
 | `clearDrawnShapes()` | None | Clear only drawn shapes |
-| `drawRectangle(x, y, w, h, options)` | Coordinates and styling | Draw rectangle programmatically |
-| `drawPolygon(points, options)` | Points array and styling | Draw polygon programmatically |
+| `drawRectangle(x, y, w, h, options)` | Coordinates, styling, and displayStatistics | Draw rectangle programmatically |
+| `drawPolygon(points, options)` | Points array, styling, and displayStatistics | Draw polygon programmatically |
 | `removeShape(idOrIndex)` | Shape ID or index | Remove shape by ID or index |
-| `removeShapeById(id)` | Shape ID | **NEW** Remove shape by ID |
-| `findShapeById(id)` | Shape ID | **NEW** Find shape by ID |
-| `findShapeAtPosition(point)` | Mouse coordinates | **NEW** Find shape ID at position |
-| `renderShape(shape)` | Shape object | **NEW** Render individual shape |
-| `storeShape(type, canvas, image, style)` | Shape data | **NEW** Common storage function |
+| `removeShapeById(id)` | Shape ID | Remove shape by ID |
+| `findShapeById(id)` | Shape ID | Find shape by ID |
+| `findShapeAtPosition(point)` | Mouse coordinates | Find shape ID at position |
+| `renderShape(shape)` | Shape object | Render individual shape |
+| `storeShape(type, canvas, image, style)` | Shape data | Common storage function |
 
 ## Interactive Features
 
@@ -325,6 +326,48 @@ const shape = canvasRef.value.findShapeById('shape_1_1672531200000')
 if (shape) {
   console.log('Found shape:', shape.type)
 }
+```
+
+### Shape Indexing
+```javascript
+// Enable index display on all shapes
+<MLCanvas :showIndex="true" />
+
+// Each shape gets a 1-based index in creation order
+// When shapes are deleted, subsequent shapes automatically take lower indices
+// Index is displayed outside the shape to avoid obstructing the view
+
+// Access shape index programmatically
+const shapes = canvasRef.value.getDrawnShapes()
+shapes.forEach(shape => {
+  console.log(`Shape ${shape.index}: ${shape.type}`) // 1, 2, 3...
+})
+```
+
+### Display Statistics (Inspect Mode)
+```javascript
+// Add statistics to shapes for display in inspect mode
+canvasRef.value.drawRectangle(100, 50, 200, 150, {
+  strokeStyle: '#ff0000',
+  displayStatistics: [
+    { name: 'Class', type: 'string', value: 'Person' },
+    { name: 'Confidence', type: 'number', value: 0.95 },
+    { name: 'Area', type: 'number', value: 30000 }
+  ]
+})
+
+canvasRef.value.drawPolygon(points, {
+  strokeStyle: '#00ff00',
+  displayStatistics: [
+    { name: 'Label', type: 'string', value: 'Road' },
+    { name: 'Score', type: 'number', value: 0.87 }
+  ]
+})
+
+// When in inspect mode, hovering over shapes shows their statistics
+drawingMode.value = 'inspect'
+// Statistics appear in a card below the magnified view
+// Format: "Name: Value" for each statistic
 ```
 
 ## ML Use Cases

@@ -26,6 +26,18 @@
       :class="{ visible: inspectVisible && props.drawingMode === 'inspect' }"
     >
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
+      <div v-if="currentShapeStatistics" class="inspect-statistics">
+        <div class="statistics-card">
+          <div
+            v-for="(stat, index) in currentShapeStatistics"
+            :key="index"
+            class="statistic-item"
+          >
+            <span class="stat-name">{{ stat.name }}:</span>
+            <span class="stat-value">{{ stat.value }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -64,6 +76,10 @@ const props = defineProps({
     default: 20, // Padding around shape in inspect mode (in image pixels)
     validator: (value) => value >= 0 && value <= 100,
   },
+  showIndex: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted'])
@@ -98,6 +114,7 @@ const inspectCanvasRef = ref(null)
 const inspectCtx = ref(null)
 const inspectVisible = ref(false)
 const hoveredShapeId = ref(null)
+const currentShapeStatistics = ref(null)
 
 let resizeTimeout = null
 
@@ -260,6 +277,7 @@ const updateInspect = (event) => {
   if (props.drawingMode !== 'inspect' || !inspectCtx.value || !canvasRef.value || !pastedImage.value || !imageInfo.value) {
     inspectVisible.value = false
     hoveredShapeId.value = null
+    currentShapeStatistics.value = null
     return
   }
 
@@ -269,6 +287,7 @@ const updateInspect = (event) => {
   if (!shapeId) {
     inspectVisible.value = false
     hoveredShapeId.value = null
+    currentShapeStatistics.value = null
     return
   }
 
@@ -276,12 +295,21 @@ const updateInspect = (event) => {
   const shape = findShapeById(shapeId)
   if (!shape) {
     inspectVisible.value = false
+    currentShapeStatistics.value = null
     return
+  }
+
+  // Update statistics if the shape has displayStatistics
+  if (shape.displayStatistics && Array.isArray(shape.displayStatistics)) {
+    currentShapeStatistics.value = shape.displayStatistics
+  } else {
+    currentShapeStatistics.value = null
   }
 
   const bbox = getBoundingBox(shape)
   if (!bbox) {
     inspectVisible.value = false
+    currentShapeStatistics.value = null
     return
   }
 
@@ -416,7 +444,7 @@ const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fit
 const drawRectangle = (x, y, width, height, options = {}) => {
   if (!ctx.value) return
 
-  const { fillStyle = null, strokeStyle = '#000000', lineWidth = 1, lineDash = [] } = options
+  const { fillStyle = null, strokeStyle = '#000000', lineWidth = 1, lineDash = [], displayStatistics = null } = options
 
   // Image coordinate data (what was passed in)
   const imageData = { x, y, width, height }
@@ -438,7 +466,7 @@ const drawRectangle = (x, y, width, height, options = {}) => {
     strokeStyle,
     lineWidth,
     lineDash,
-  })
+  }, displayStatistics)
 
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
@@ -478,6 +506,7 @@ const drawPolygon = (points, options = {}) => {
     lineWidth = 1,
     lineDash = [],
     closePath = true,
+    displayStatistics = null,
   } = options
 
   // Convert image coordinates to canvas coordinates
@@ -490,7 +519,7 @@ const drawPolygon = (points, options = {}) => {
     lineWidth,
     lineDash,
     closePath,
-  })
+  }, displayStatistics)
   console.log('(MLCANVAS) Polygon shape created with ID:', shape.id)
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
@@ -509,7 +538,7 @@ const generateShapeId = () => {
 }
 
 // Common function to store drawn shapes with IDs
-const storeShape = (type, canvasData, imageData = null, style = {}) => {
+const storeShape = (type, canvasData, imageData = null, style = {}, displayStatistics = null) => {
   const shape = {
     id: generateShapeId(),
     type,
@@ -517,6 +546,12 @@ const storeShape = (type, canvasData, imageData = null, style = {}) => {
     image: imageData || canvasData,
     style,
     timestamp: Date.now(),
+    index: drawnShapes.value.length + 1, // 1-based index
+  }
+
+  // Add displayStatistics if provided
+  if (displayStatistics) {
+    shape.displayStatistics = displayStatistics
   }
 
   drawnShapes.value.push(shape)
@@ -524,11 +559,18 @@ const storeShape = (type, canvasData, imageData = null, style = {}) => {
   return shape
 }
 
+// Reindex all shapes to maintain sequential order
+const reindexShapes = () => {
+  drawnShapes.value.forEach((shape, idx) => {
+    shape.index = idx + 1
+  })
+}
+
 // Render a single shape on canvas
 const renderShape = (shape) => {
   if (!ctx.value || !shape) return
 
-  const { type, canvas: canvasData, style } = shape
+  const { type, canvas: canvasData, style, index } = shape
 
   if (type === 'rectangle') {
     const { x, y, width, height } = canvasData
@@ -552,6 +594,11 @@ const renderShape = (shape) => {
     }
 
     ctx.value.restore()
+
+    // Draw index if showIndex is enabled (outside top-left corner)
+    if (props.showIndex) {
+      drawShapeIndex(x - 25, y - 5, index, strokeStyle)
+    }
   } else if (type === 'polygon' || type === 'freestyle' || type === 'freeform') {
     const points = canvasData
     const {
@@ -598,7 +645,24 @@ const renderShape = (shape) => {
     }
 
     ctx.value.restore()
+
+    // Draw index if showIndex is enabled (outside the first point)
+    if (props.showIndex && points.length > 0) {
+      drawShapeIndex(points[0].x - 25, points[0].y - 5, index, strokeStyle)
+    }
   }
+}
+
+// Draw index number on shape
+const drawShapeIndex = (x, y, index, color) => {
+  ctx.value.save()
+  ctx.value.font = 'bold 16px Arial'
+  ctx.value.fillStyle = color || '#000000'
+  ctx.value.strokeStyle = '#ffffff'
+  ctx.value.lineWidth = 3
+  ctx.value.strokeText(String(index), x, y)
+  ctx.value.fillText(String(index), x, y)
+  ctx.value.restore()
 }
 
 const pasteImage = async (x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -918,6 +982,7 @@ const handleMouseLeave = () => {
   magnifierVisible.value = false
   inspectVisible.value = false
   hoveredShapeId.value = null
+  currentShapeStatistics.value = null
 }
 
 const handleDoubleClick = () => {
@@ -1282,6 +1347,7 @@ const removeShapeById = (id) => {
   const shapeIndex = drawnShapes.value.findIndex((shape) => shape.id === id)
   if (shapeIndex >= 0) {
     const removedShape = drawnShapes.value.splice(shapeIndex, 1)[0]
+    reindexShapes() // Reindex after removal
     redrawCanvas() // Still need to redraw all since canvas is not layered
     emit('shape-removed', removedShape)
     return removedShape
@@ -1333,6 +1399,7 @@ watch(
       // Hide inspect popup when not in inspect mode
       inspectVisible.value = false
       hoveredShapeId.value = null
+      currentShapeStatistics.value = null
     }
   },
 )
