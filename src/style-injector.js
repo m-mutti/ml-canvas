@@ -57,6 +57,11 @@ function injectCSS() {
   display: block;
 }
 
+.inspect-popup.locked {
+  pointer-events: all;
+  border-color: #0099ff;
+}
+
 .inspect-canvas {
   position: absolute;
   width: 400px;
@@ -97,6 +102,71 @@ function injectCSS() {
 .stat-value {
   color: #666;
   margin-left: auto;
+}
+
+.stat-value-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: inherit;
+  margin-left: auto;
+  min-width: 100px;
+}
+
+.stat-value-input:focus {
+  outline: none;
+  border-color: #0099ff;
+  box-shadow: 0 0 0 2px rgba(0, 153, 255, 0.1);
+}
+
+.inspect-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: stretch;
+}
+
+.save-button,
+.cancel-button {
+  flex: 1;
+  padding: 8px 12px;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: white;
+  box-sizing: border-box;
+  line-height: 1.5;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  text-align: center;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.save-button {
+  background: #00aa00;
+}
+
+.save-button:hover {
+  background: #008800;
+}
+
+.cancel-button {
+  background: #ff4444;
+}
+
+.cancel-button:hover {
+  background: #cc0000;
 }`
 
   if (typeof document !== 'undefined') {

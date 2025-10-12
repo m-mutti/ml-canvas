@@ -219,6 +219,7 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `shape-removed` | `shape` | Emitted when a shape is removed |
 | `canvas-reset` | `void` | Emitted when canvas is completely reset |
 | `image-pasted` | `imageData` | Emitted when an image is pasted from clipboard |
+| `statistics-updated` | `{ shapeId, statistics }` | Emitted when statistics are saved in inspect mode |
 
 ### Methods
 
@@ -350,9 +351,10 @@ shapes.forEach(shape => {
 canvasRef.value.drawRectangle(100, 50, 200, 150, {
   strokeStyle: '#ff0000',
   displayStatistics: [
-    { name: 'Class', type: 'string', value: 'Person' },
-    { name: 'Confidence', type: 'number', value: 0.95 },
-    { name: 'Area', type: 'number', value: 30000 }
+    { name: 'ID', type: 'string', value: '12345', editable: false },  // Read-only
+    { name: 'Class', type: 'string', value: 'Person' },                // Editable (default)
+    { name: 'Confidence', type: 'number', value: 0.95 },               // Editable (default)
+    { name: 'Area', type: 'number', value: 30000, editable: true }     // Explicitly editable
   ]
 })
 
@@ -364,10 +366,28 @@ canvasRef.value.drawPolygon(points, {
   ]
 })
 
-// When in inspect mode, hovering over shapes shows their statistics
+// Interactive editing in inspect mode:
+// 1. Hover over shapes to see their statistics
+// 2. Click a shape to lock the popup and make statistics editable
+// 3. Edit values (respects 'editable' property - default is true)
+// 4. Click 'Save' to apply changes and emit 'statistics-updated' event
+// 5. Click 'Cancel' to discard changes and close popup
+
 drawingMode.value = 'inspect'
-// Statistics appear in a card below the magnified view
-// Format: "Name: Value" for each statistic
+
+// Listen for statistics updates (only fires when Save is clicked)
+<MLCanvas @statistics-updated="handleStatisticsUpdate" />
+
+const handleStatisticsUpdate = ({ shapeId, statistics }) => {
+  console.log(`Statistics updated for shape ${shapeId}:`, statistics)
+  // Update your ML model or database
+}
+
+// Statistic properties:
+// - name: Display name for the statistic
+// - type: 'string' or 'number' (determines input type)
+// - value: Current value
+// - editable: Boolean (default: true). Set to false for read-only fields
 ```
 
 ## ML Use Cases

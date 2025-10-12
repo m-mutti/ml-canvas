@@ -23,7 +23,7 @@
     <div
       ref="inspectRef"
       class="inspect-popup"
-      :class="{ visible: inspectVisible && props.drawingMode === 'inspect' }"
+      :class="{ visible: inspectVisible && props.drawingMode === 'inspect', locked: inspectLocked }"
     >
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
       <div v-if="currentShapeStatistics" class="inspect-statistics">
@@ -34,8 +34,22 @@
             class="statistic-item"
           >
             <span class="stat-name">{{ stat.name }}:</span>
-            <span class="stat-value">{{ stat.value }}</span>
+            <input
+              v-if="inspectLocked && (stat.editable !== false)"
+              :type="stat.type === 'number' ? 'number' : 'text'"
+              class="stat-value-input"
+              v-model="editableStatistics[index].value"
+            />
+            <span v-else class="stat-value">{{ stat.value }}</span>
           </div>
+        </div>
+        <div v-if="inspectLocked" class="inspect-buttons">
+          <button class="save-button" @click="saveStatistics">
+            Save
+          </button>
+          <button class="cancel-button" @click="cancelInspectLock">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -82,7 +96,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted'])
+const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted', 'statistics-updated'])
 
 const containerRef = ref(null)
 const canvasRef = ref(null)
@@ -115,6 +129,10 @@ const inspectCtx = ref(null)
 const inspectVisible = ref(false)
 const hoveredShapeId = ref(null)
 const currentShapeStatistics = ref(null)
+const inspectLocked = ref(false)
+const lockedShapeId = ref(null)
+const lockedPosition = ref({ x: 0, y: 0 })
+const editableStatistics = ref(null)
 
 let resizeTimeout = null
 
@@ -273,7 +291,82 @@ const getBoundingBox = (shape) => {
   return null
 }
 
+// Lock inspect popup on click
+const lockInspectPopup = (shapeId, event) => {
+  const shape = findShapeById(shapeId)
+  if (!shape || !shape.displayStatistics) {
+    return
+  }
+
+  inspectLocked.value = true
+  lockedShapeId.value = shapeId
+
+  // Create a deep copy of statistics for editing
+  editableStatistics.value = JSON.parse(JSON.stringify(shape.displayStatistics))
+  currentShapeStatistics.value = editableStatistics.value
+
+  // Store position
+  lockedPosition.value = {
+    x: event.clientX + 20,
+    y: event.clientY - 220
+  }
+
+  // Adjust position if too close to edge
+  if (event.clientX > window.innerWidth - 450) {
+    lockedPosition.value.x = event.clientX - 420
+  }
+  if (event.clientY < 250) {
+    lockedPosition.value.y = event.clientY + 20
+  }
+
+  // Set popup position
+  if (inspectRef.value) {
+    inspectRef.value.style.left = lockedPosition.value.x + 'px'
+    inspectRef.value.style.top = lockedPosition.value.y + 'px'
+  }
+
+  inspectVisible.value = true
+  hoveredShapeId.value = shapeId
+}
+
+// Cancel locked inspect popup
+const cancelInspectLock = () => {
+  inspectLocked.value = false
+  lockedShapeId.value = null
+  editableStatistics.value = null
+  inspectVisible.value = false
+  currentShapeStatistics.value = null
+  hoveredShapeId.value = null
+}
+
+// Save statistics changes
+const saveStatistics = () => {
+  if (!lockedShapeId.value || !editableStatistics.value) {
+    return
+  }
+
+  const shape = findShapeById(lockedShapeId.value)
+  if (shape) {
+    // Update shape's displayStatistics
+    shape.displayStatistics = JSON.parse(JSON.stringify(editableStatistics.value))
+
+    // Emit event
+    emit('statistics-updated', {
+      shapeId: lockedShapeId.value,
+      statistics: shape.displayStatistics
+    })
+
+    // Close the popup after saving
+    cancelInspectLock()
+  }
+}
+
 const updateInspect = (event) => {
+  // If locked, don't update on hover
+  if (inspectLocked.value) {
+    return
+  }
+
   if (props.drawingMode !== 'inspect' || !inspectCtx.value || !canvasRef.value || !pastedImage.value || !imageInfo.value) {
     inspectVisible.value = false
     hoveredShapeId.value = null
@@ -882,6 +975,15 @@ const scaleToImageCoordinates = (canvasX, canvasY) => {
 const handleMouseDown = (event) => {
   const mousePos = getMousePos(event)
 
+  // Handle inspect mode - click to lock popup
+  if (props.drawingMode === 'inspect') {
+    const clickedShapeId = findShapeAtPosition(mousePos)
+    if (clickedShapeId !== null) {
+      lockInspectPopup(clickedShapeId, event)
+    }
+    return
+  }
+
   // Handle delete mode - click to remove shapes
   if (props.drawingMode === 'delete') {
     const clickedShapeId = findShapeAtPosition(mousePos)
@@ -980,9 +1082,12 @@ const handleMouseUp = () => {
 
 const handleMouseLeave = () => {
   magnifierVisible.value = false
-  inspectVisible.value = false
-  hoveredShapeId.value = null
-  currentShapeStatistics.value = null
+  // Don't hide inspect popup if it's locked
+  if (!inspectLocked.value) {
+    inspectVisible.value = false
+    hoveredShapeId.value = null
+    currentShapeStatistics.value = null
+  }
 }
 
 const handleDoubleClick = () => {
@@ -1400,6 +1505,10 @@ watch(
       inspectVisible.value = false
       hoveredShapeId.value = null
       currentShapeStatistics.value = null
+      // Close locked popup when changing mode
+      if (inspectLocked.value) {
+        cancelInspectLock()
+      }
     }
   },
 )

@@ -52,6 +52,7 @@
  * @property {string} name - Name of the statistic
  * @property {string} type - Type/category of the statistic
  * @property {string|number} value - Value of the statistic
+ * @property {boolean} [editable=true] - Whether the statistic is editable in inspect mode
  */
 
 /**
