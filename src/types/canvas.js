@@ -186,6 +186,11 @@
  * @property {function(): CanvasRenderingContext2D|null} getContext - Get canvas 2D context
  * @property {function(): HTMLCanvasElement|null} getCanvas - Get canvas element
  * @property {function(): CanvasSize} getCanvasSize - Get canvas dimensions
+ * @property {function(string, Statistic[], boolean?): Statistic[]|null} updateDisplayStatistics - Replace all displayStatistics for a shape by cell ID (emitEvent defaults to true)
+ * @property {function(string, string, string|number, boolean?): Statistic|null} updateDisplayStatistic - Update a single statistic value by cell ID and statistic name (emitEvent defaults to true)
+ * @property {function(string, Statistic, boolean?): Statistic|null} addDisplayStatistic - Add a new statistic to a shape by cell ID (emitEvent defaults to true)
+ * @property {function(string, string, boolean?): Statistic|null} removeDisplayStatistic - Remove a statistic from a shape by cell ID and statistic name (emitEvent defaults to true)
+ * @property {function(string): Statistic[]} getDisplayStatistics - Get all displayStatistics for a shape by cell ID
  */
 
 export {}

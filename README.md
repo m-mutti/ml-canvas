@@ -241,6 +241,11 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `findShapeAtPosition(point)` | Mouse coordinates | Find shape ID at position |
 | `renderShape(shape)` | Shape object | Render individual shape |
 | `storeShape(type, canvas, image, style)` | Shape data | Common storage function |
+| `updateDisplayStatistics(cellId, statistics, emitEvent?)` | Shape ID, statistics array, emit event (default: true) | Replace all displayStatistics for a shape |
+| `updateDisplayStatistic(cellId, statisticName, newValue, emitEvent?)` | Shape ID, statistic name, new value, emit event (default: true) | Update a single statistic value |
+| `addDisplayStatistic(cellId, statistic, emitEvent?)` | Shape ID, statistic object, emit event (default: true) | Add a new statistic to a shape |
+| `removeDisplayStatistic(cellId, statisticName, emitEvent?)` | Shape ID, statistic name, emit event (default: true) | Remove a statistic from a shape |
+| `getDisplayStatistics(cellId)` | Shape ID | Get all displayStatistics for a shape |
 
 ## Interactive Features
 
@@ -388,6 +393,62 @@ const handleStatisticsUpdate = ({ shapeId, statistics }) => {
 // - type: 'string' or 'number' (determines input type)
 // - value: Current value
 // - editable: Boolean (default: true). Set to false for read-only fields
+```
+
+### Programmatic Statistics Management
+```javascript
+// Get the shape ID from created shapes
+const shape = canvasRef.value.drawRectangle(100, 50, 200, 150, {
+  displayStatistics: [
+    { name: 'Class', type: 'string', value: 'Person' },
+    { name: 'Confidence', type: 'number', value: 0.95 }
+  ]
+})
+
+const shapeId = shape.id
+
+// Get all statistics for a shape
+const stats = canvasRef.value.getDisplayStatistics(shapeId)
+console.log('Current statistics:', stats)
+
+// Update a single statistic value
+canvasRef.value.updateDisplayStatistic(shapeId, 'Confidence', 0.98)
+
+// Add a new statistic to the shape
+canvasRef.value.addDisplayStatistic(shapeId, {
+  name: 'Area',
+  type: 'number',
+  value: 30000,
+  editable: false  // Optional, defaults to true
+})
+
+// Remove a statistic from the shape
+canvasRef.value.removeDisplayStatistic(shapeId, 'Area')
+
+// Replace all statistics for a shape
+canvasRef.value.updateDisplayStatistics(shapeId, [
+  { name: 'Label', type: 'string', value: 'Vehicle' },
+  { name: 'Score', type: 'number', value: 0.88 },
+  { name: 'Bbox', type: 'string', value: '[100, 50, 200, 150]', editable: false }
+])
+
+// All methods emit 'statistics-updated' event by default when changes are made
+<MLCanvas @statistics-updated="handleStatisticsUpdate" />
+
+const handleStatisticsUpdate = ({ shapeId, statistics }) => {
+  console.log(`Statistics updated for ${shapeId}:`, statistics)
+  // Sync with your backend or ML pipeline
+  syncToDatabase(shapeId, statistics)
+}
+
+// Suppress event emission with optional parameter (useful for batch updates)
+canvasRef.value.updateDisplayStatistic(shapeId, 'Confidence', 0.92, false) // No event
+canvasRef.value.updateDisplayStatistic(shapeId, 'Area', 28000, false)      // No event
+canvasRef.value.addDisplayStatistic(shapeId, {
+  name: 'Updated',
+  type: 'string',
+  value: new Date().toISOString()
+}, true) // Emit event only after all updates are done
 ```
 
 ## ML Use Cases

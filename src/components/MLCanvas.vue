@@ -28,14 +28,10 @@
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
       <div v-if="currentShapeStatistics" class="inspect-statistics">
         <div class="statistics-card">
-          <div
-            v-for="(stat, index) in currentShapeStatistics"
-            :key="index"
-            class="statistic-item"
-          >
+          <div v-for="(stat, index) in currentShapeStatistics" :key="index" class="statistic-item">
             <span class="stat-name">{{ stat.name }}:</span>
             <input
-              v-if="inspectLocked && (stat.editable !== false)"
+              v-if="inspectLocked && stat.editable !== false"
               :type="stat.type === 'number' ? 'number' : 'text'"
               class="stat-value-input"
               v-model="editableStatistics[index].value"
@@ -44,12 +40,8 @@
           </div>
         </div>
         <div v-if="inspectLocked" class="inspect-buttons">
-          <button class="save-button" @click="saveStatistics">
-            Save
-          </button>
-          <button class="cancel-button" @click="cancelInspectLock">
-            Cancel
-          </button>
+          <button class="save-button" @click="saveStatistics">Save</button>
+          <button class="cancel-button" @click="cancelInspectLock">Cancel</button>
         </div>
       </div>
     </div>
@@ -69,7 +61,9 @@ const props = defineProps({
     type: String,
     default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'
     validator: (value) =>
-      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'].includes(value),
+      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'].includes(
+        value,
+      ),
   },
   freestyleSensitivity: {
     type: Number,
@@ -96,7 +90,13 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['shape-created', 'shape-removed', 'canvas-reset', 'image-pasted', 'statistics-updated'])
+const emit = defineEmits([
+  'shape-created',
+  'shape-removed',
+  'canvas-reset',
+  'image-pasted',
+  'statistics-updated',
+])
 
 const containerRef = ref(null)
 const canvasRef = ref(null)
@@ -308,7 +308,7 @@ const lockInspectPopup = (shapeId, event) => {
   // Store position
   lockedPosition.value = {
     x: event.clientX + 20,
-    y: event.clientY - 220
+    y: event.clientY - 220,
   }
 
   // Adjust position if too close to edge
@@ -353,7 +353,7 @@ const saveStatistics = () => {
     // Emit event
     emit('statistics-updated', {
       shapeId: lockedShapeId.value,
-      statistics: shape.displayStatistics
+      statistics: shape.displayStatistics,
     })
 
     // Close the popup after saving
@@ -367,7 +367,13 @@ const updateInspect = (event) => {
     return
   }
 
-  if (props.drawingMode !== 'inspect' || !inspectCtx.value || !canvasRef.value || !pastedImage.value || !imageInfo.value) {
+  if (
+    props.drawingMode !== 'inspect' ||
+    !inspectCtx.value ||
+    !canvasRef.value ||
+    !pastedImage.value ||
+    !imageInfo.value
+  ) {
     inspectVisible.value = false
     hoveredShapeId.value = null
     currentShapeStatistics.value = null
@@ -537,7 +543,13 @@ const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fit
 const drawRectangle = (x, y, width, height, options = {}) => {
   if (!ctx.value) return
 
-  const { fillStyle = null, strokeStyle = '#000000', lineWidth = 1, lineDash = [], displayStatistics = null } = options
+  const {
+    fillStyle = null,
+    strokeStyle = '#000000',
+    lineWidth = 1,
+    lineDash = [],
+    displayStatistics = null,
+  } = options
 
   // Image coordinate data (what was passed in)
   const imageData = { x, y, width, height }
@@ -554,12 +566,18 @@ const drawRectangle = (x, y, width, height, options = {}) => {
   }
 
   // Store shape using common function
-  const shape = storeShape('rectangle', canvasRect, imageData, {
-    fillStyle,
-    strokeStyle,
-    lineWidth,
-    lineDash,
-  }, displayStatistics)
+  const shape = storeShape(
+    'rectangle',
+    canvasRect,
+    imageData,
+    {
+      fillStyle,
+      strokeStyle,
+      lineWidth,
+      lineDash,
+    },
+    displayStatistics,
+  )
 
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
@@ -591,7 +609,6 @@ const scaleToCanvasCoordinates = (imageX, imageY) => {
 
 const drawPolygon = (points, options = {}) => {
   if (!ctx.value || !points || points.length < 3) return
-  console.log('(MLCANVAS) Drawing polygon with points:', points)
 
   const {
     fillStyle = null,
@@ -606,14 +623,19 @@ const drawPolygon = (points, options = {}) => {
   const canvasPoints = points.map((p) => scaleToCanvasCoordinates(p.x, p.y))
 
   // Store shape using common function (canvasPoints for rendering, points for image data)
-  const shape = storeShape('polygon', canvasPoints, points, {
-    fillStyle,
-    strokeStyle,
-    lineWidth,
-    lineDash,
-    closePath,
-  }, displayStatistics)
-  console.log('(MLCANVAS) Polygon shape created with ID:', shape.id)
+  const shape = storeShape(
+    'polygon',
+    canvasPoints,
+    points,
+    {
+      fillStyle,
+      strokeStyle,
+      lineWidth,
+      lineDash,
+      closePath,
+    },
+    displayStatistics,
+  )
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
 
@@ -1064,15 +1086,12 @@ const handleMouseUp = () => {
     (props.drawingMode === 'freestyle' || props.drawingMode === 'freeform') &&
     isDrawing.value
   ) {
-    console.log('Freestyle mouse up, path length:', freestylePath.value.length)
     isDrawing.value = false
     const shape = createFreestyleShape()
     if (shape) {
-      console.log('Shape created successfully')
       freestylePath.value = []
       redrawCanvas()
     } else {
-      console.log('Failed to create shape')
       // Clear the incomplete path
       freestylePath.value = []
       redrawCanvas()
@@ -1174,12 +1193,6 @@ const createFreestyleShape = () => {
 
   // Simplify the path to reduce number of points while maintaining smoothness
   const simplifiedPath = simplifyPath(freestylePath.value, props.simplificationTolerance)
-  console.log(
-    'Original path points:',
-    freestylePath.value.length,
-    'Simplified points:',
-    simplifiedPath.length,
-  )
 
   const imagePoints = simplifiedPath
     .map((p) => {
@@ -1188,14 +1201,10 @@ const createFreestyleShape = () => {
     })
     .filter((p) => p !== null)
 
-  console.log('Image points after scaling:', imagePoints.length)
-
   if (imagePoints.length < 2) {
     console.log('Not enough image points after scaling:', imagePoints.length)
     return null
   }
-
-  console.log('Creating freestyle shape with', imagePoints.length, 'points')
 
   // Use common storage function with current drawing mode
   const shapeType = props.drawingMode === 'freeform' ? 'freeform' : 'freestyle'
@@ -1522,6 +1531,131 @@ const getCanvasSize = () => ({
   height: canvasHeight.value,
 })
 
+// Functions for editing displayStatistics by cell ID
+const updateDisplayStatistics = (cellId, statistics, emitEvent = true) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  // Update shape's displayStatistics
+  shape.displayStatistics = Array.isArray(statistics) ? JSON.parse(JSON.stringify(statistics)) : []
+
+  // Emit event if requested
+  if (emitEvent) {
+    emit('statistics-updated', {
+      shapeId: cellId,
+      statistics: shape.displayStatistics,
+    })
+  }
+
+  return shape.displayStatistics
+}
+
+const updateDisplayStatistic = (cellId, statisticName, newValue, emitEvent = true) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  if (!shape.displayStatistics || !Array.isArray(shape.displayStatistics)) {
+    console.warn(`Shape ${cellId} has no displayStatistics`)
+    return null
+  }
+
+  const statIndex = shape.displayStatistics.findIndex((stat) => stat.name === statisticName)
+  if (statIndex === -1) {
+    console.warn(`Statistic ${statisticName} not found in shape ${cellId}`)
+    return null
+  }
+
+  shape.displayStatistics[statIndex].value = newValue
+
+  // Emit event if requested
+  if (emitEvent) {
+    emit('statistics-updated', {
+      shapeId: cellId,
+      statistics: shape.displayStatistics,
+    })
+  }
+
+  return shape.displayStatistics[statIndex]
+}
+
+const addDisplayStatistic = (cellId, statistic, emitEvent = true) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  if (!shape.displayStatistics) {
+    shape.displayStatistics = []
+  }
+
+  const newStat = {
+    name: statistic.name || 'Unnamed',
+    type: statistic.type || 'text',
+    value: statistic.value || '',
+    editable: statistic.editable !== false,
+  }
+
+  shape.displayStatistics.push(newStat)
+
+  // Emit event if requested
+  if (emitEvent) {
+    emit('statistics-updated', {
+      shapeId: cellId,
+      statistics: shape.displayStatistics,
+    })
+  }
+
+  return newStat
+}
+
+const removeDisplayStatistic = (cellId, statisticName, emitEvent = true) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  if (!shape.displayStatistics || !Array.isArray(shape.displayStatistics)) {
+    console.warn(`Shape ${cellId} has no displayStatistics`)
+    return null
+  }
+
+  const statIndex = shape.displayStatistics.findIndex((stat) => stat.name === statisticName)
+  if (statIndex === -1) {
+    console.warn(`Statistic ${statisticName} not found in shape ${cellId}`)
+    return null
+  }
+
+  const removedStat = shape.displayStatistics.splice(statIndex, 1)[0]
+
+  // Emit event if requested
+  if (emitEvent) {
+    emit('statistics-updated', {
+      shapeId: cellId,
+      statistics: shape.displayStatistics,
+    })
+  }
+
+  return removedStat
+}
+
+const getDisplayStatistics = (cellId) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  return shape.displayStatistics || []
+}
+
 onMounted(() => {
   ensureStylesInjected()
   window.addEventListener('resize', debouncedResize)
@@ -1570,5 +1704,10 @@ defineExpose({
   renderShape,
   storeShape,
   setMagnifierEnabled,
+  updateDisplayStatistics,
+  updateDisplayStatistic,
+  addDisplayStatistic,
+  removeDisplayStatistic,
+  getDisplayStatistics,
 })
 </script>
