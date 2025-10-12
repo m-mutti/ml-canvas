@@ -1,3 +1,11 @@
+## [0.3.1](https://github.com/m-mutti/ml-canvas/compare/v0.3.0...v0.3.1) (2025-10-12)
+
+
+### Bug Fixes
+
+* make fields editable in ispect when clicked ([baf6455](https://github.com/m-mutti/ml-canvas/commit/baf64550b7c36558d1fda34bb7a59c189a830925))
+* show indexes and display statistics [skip ci] ([12b00a5](https://github.com/m-mutti/ml-canvas/commit/12b00a548556cf7b8b461226f44c1b5fb29fa208))
+
 # [0.3.0](https://github.com/m-mutti/ml-canvas/compare/v0.2.1...v0.3.0) (2025-10-07)
 
 
