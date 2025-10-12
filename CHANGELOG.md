@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/m-mutti/ml-canvas/compare/v0.3.1...v0.3.2) (2025-10-12)
+
+
+### Bug Fixes
+
+* make statistics individually updatable and remove extra logs ([f483040](https://github.com/m-mutti/ml-canvas/commit/f483040b1a60209e567ff9456f16ec4869d2f260))
+
 ## [0.3.1](https://github.com/m-mutti/ml-canvas/compare/v0.3.0...v0.3.1) (2025-10-12)
 
 
