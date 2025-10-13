@@ -642,9 +642,13 @@ const drawPolygon = (points, options = {}) => {
   return shape
 }
 
-const clearCanvas = () => {
+const clearCanvasRect = () => {
   if (!ctx.value) return
   ctx.value.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
+}
+
+const clearCanvas = () => {
+  clearCanvasRect()
 
   // Clear all shapes from storage
   drawnShapes.value = []
@@ -1393,7 +1397,7 @@ const drawSmoothPath = (context, points, isClosed = true) => {
 }
 
 const redrawCanvas = () => {
-  clearCanvas()
+  clearCanvasRect()
 
   // Redraw image if exists
   if (pastedImage.value && imageInfo.value) {
