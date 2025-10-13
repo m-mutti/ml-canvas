@@ -1,3 +1,10 @@
+## [0.3.4](https://github.com/m-mutti/ml-canvas/compare/v0.3.3...v0.3.4) (2025-10-13)
+
+
+### Bug Fixes
+
+* cells not showing after previous fix ([d8b9447](https://github.com/m-mutti/ml-canvas/commit/d8b9447cd502813ea995037369b60aaa24d4325f))
+
 ## [0.3.3](https://github.com/m-mutti/ml-canvas/compare/v0.3.2...v0.3.3) (2025-10-13)
 
 
