@@ -645,6 +645,16 @@ const drawPolygon = (points, options = {}) => {
 const clearCanvas = () => {
   if (!ctx.value) return
   ctx.value.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
+
+  // Clear all shapes from storage
+  drawnShapes.value = []
+
+  // Reset drawing state
+  isDrawing.value = false
+  polygonPoints.value = []
+  freestylePath.value = []
+  startPoint.value = { x: 0, y: 0 }
+  currentPoint.value = { x: 0, y: 0 }
 }
 
 // Generate unique ID for shapes
