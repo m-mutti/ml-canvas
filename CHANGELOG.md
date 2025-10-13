@@ -1,3 +1,10 @@
+## [0.3.3](https://github.com/m-mutti/ml-canvas/compare/v0.3.2...v0.3.3) (2025-10-13)
+
+
+### Bug Fixes
+
+* resetCanvas will now also reset all the states ([b3a1edd](https://github.com/m-mutti/ml-canvas/commit/b3a1edd4166fa84a0acbcfab3ed37899adccc529))
+
 ## [0.3.2](https://github.com/m-mutti/ml-canvas/compare/v0.3.1...v0.3.2) (2025-10-12)
 
 
