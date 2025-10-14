@@ -1,3 +1,10 @@
+## [0.3.5](https://github.com/m-mutti/ml-canvas/compare/v0.3.4...v0.3.5) (2025-10-14)
+
+
+### Bug Fixes
+
+* added a variable to stop emitting on delete ([aff4a70](https://github.com/m-mutti/ml-canvas/commit/aff4a70ff4e3e6a41fbe9f192a530ba45ed2fd33))
+
 ## [0.3.4](https://github.com/m-mutti/ml-canvas/compare/v0.3.3...v0.3.4) (2025-10-13)
 
 
