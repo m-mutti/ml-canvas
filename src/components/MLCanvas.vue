@@ -1471,13 +1471,15 @@ const isPointInPolygon = (point, polygon) => {
 }
 
 // Remove shape by ID without full redraw
-const removeShapeById = (id) => {
+const removeShapeById = (id, shouldEmit = true) => {
   const shapeIndex = drawnShapes.value.findIndex((shape) => shape.id === id)
   if (shapeIndex >= 0) {
     const removedShape = drawnShapes.value.splice(shapeIndex, 1)[0]
     reindexShapes() // Reindex after removal
     redrawCanvas() // Still need to redraw all since canvas is not layered
-    emit('shape-removed', removedShape)
+    if (shouldEmit) {
+      emit('shape-removed', removedShape)
+    }
     return removedShape
   }
   return null
