@@ -1,3 +1,10 @@
+## [0.3.6](https://github.com/m-mutti/ml-canvas/compare/v0.3.5...v0.3.6) (2025-10-19)
+
+
+### Bug Fixes
+
+* added delete button to inspect ([b6b3cf7](https://github.com/m-mutti/ml-canvas/commit/b6b3cf7d5128f123b0dac4e4fd80d5daf18a5ee4))
+
 ## [0.3.5](https://github.com/m-mutti/ml-canvas/compare/v0.3.4...v0.3.5) (2025-10-14)
 
 
