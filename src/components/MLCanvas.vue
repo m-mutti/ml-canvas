@@ -40,7 +40,10 @@
           </div>
         </div>
         <div v-if="inspectLocked" class="inspect-buttons">
-          <button class="save-button" @click="saveStatistics">Save</button>
+          <div class="inspect-buttons-row">
+            <button class="save-button" @click="saveStatistics">Save</button>
+            <button class="delete-button" @click="deleteShape">Delete</button>
+          </div>
           <button class="cancel-button" @click="cancelInspectLock">Cancel</button>
         </div>
       </div>
@@ -359,6 +362,16 @@ const saveStatistics = () => {
     // Close the popup after saving
     cancelInspectLock()
   }
+}
+
+// Delete the currently inspected shape
+const deleteShape = () => {
+  if (!lockedShapeId.value) {
+    return
+  }
+
+  removeShapeById(lockedShapeId.value)
+  cancelInspectLock()
 }
 
 const updateInspect = (event) => {

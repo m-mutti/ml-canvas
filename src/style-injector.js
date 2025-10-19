@@ -123,12 +123,19 @@ function injectCSS() {
 
 .inspect-buttons {
   display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-top: 8px;
+}
+
+.inspect-buttons-row {
+  display: flex;
+  gap: 8px;
   align-items: stretch;
 }
 
 .save-button,
+.delete-button,
 .cancel-button {
   flex: 1;
   padding: 8px 12px;
@@ -161,8 +168,17 @@ function injectCSS() {
   background: #008800;
 }
 
+.delete-button {
+  background: #ff6600;
+}
+
+.delete-button:hover {
+  background: #dd4400;
+}
+
 .cancel-button {
   background: #ff4444;
+  width: 100%;
 }
 
 .cancel-button:hover {
