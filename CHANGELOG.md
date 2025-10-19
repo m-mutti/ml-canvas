@@ -1,3 +1,10 @@
+## [0.3.7](https://github.com/m-mutti/ml-canvas/compare/v0.3.6...v0.3.7) (2025-10-19)
+
+
+### Bug Fixes
+
+* inspect not working when canvas is scaled ([c2fdb7e](https://github.com/m-mutti/ml-canvas/commit/c2fdb7e1799fee6c6aa21b034f4a57f0e1167aa7))
+
 ## [0.3.6](https://github.com/m-mutti/ml-canvas/compare/v0.3.5...v0.3.6) (2025-10-19)
 
 
