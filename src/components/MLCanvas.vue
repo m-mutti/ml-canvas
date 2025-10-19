@@ -178,6 +178,11 @@ const updateCanvasSize = () => {
       canvas.height = newHeight
 
       const context = canvas.getContext('2d')
+
+      // Enable image smoothing for better quality
+      context.imageSmoothingEnabled = true
+      context.imageSmoothingQuality = 'high'
+
       ctx.value = context
 
       // Initialize magnifier canvas
@@ -986,11 +991,16 @@ const updateImage = async (
 
 // Mouse event handlers
 const getMousePos = (event) => {
-  const rect = canvasRef.value.getBoundingClientRect()
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+
+  // Account for the difference between canvas display size and internal resolution
+  const scaleX = canvas.width / rect.width
+  const scaleY = canvas.height / rect.height
 
   return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top,
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY,
   }
 }
 
