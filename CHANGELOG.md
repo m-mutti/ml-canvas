@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/m-mutti/ml-canvas/compare/v0.3.7...v0.4.0) (2025-10-28)
+
+
+### Features
+
+* draw mode for click ([4f47945](https://github.com/m-mutti/ml-canvas/commit/4f479458e76e0a6e7fc02af27adb70d1751ee764))
+
 ## [0.3.7](https://github.com/m-mutti/ml-canvas/compare/v0.3.6...v0.3.7) (2025-10-19)
 
 
