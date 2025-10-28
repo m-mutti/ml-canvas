@@ -62,11 +62,18 @@ const props = defineProps({
   },
   drawingMode: {
     type: String,
-    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'
+    default: 'none', // 'none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect', 'click'
     validator: (value) =>
-      ['none', 'rectangle', 'polygon', 'freestyle', 'freeform', 'delete', 'inspect'].includes(
-        value,
-      ),
+      [
+        'none',
+        'rectangle',
+        'polygon',
+        'freestyle',
+        'freeform',
+        'delete',
+        'inspect',
+        'click',
+      ].includes(value),
   },
   freestyleSensitivity: {
     type: Number,
@@ -99,6 +106,7 @@ const emit = defineEmits([
   'canvas-reset',
   'image-pasted',
   'statistics-updated',
+  'canvas-clicked',
 ])
 
 const containerRef = ref(null)
@@ -146,6 +154,8 @@ const drawingModeCursor = computed(() => {
       return 'not-allowed'
     case 'inspect':
       return 'pointer'
+    case 'click':
+      return 'crosshair'
     case 'rectangle':
     case 'polygon':
     case 'freestyle':
@@ -1034,6 +1044,18 @@ const scaleToImageCoordinates = (canvasX, canvasY) => {
 const handleMouseDown = (event) => {
   const mousePos = getMousePos(event)
 
+  // Handle click mode - emit coordinates and return
+  if (props.drawingMode === 'click') {
+    const imagePos = scaleToImageCoordinates(mousePos.x, mousePos.y)
+    if (imagePos) {
+      emit('canvas-clicked', {
+        canvas: { x: mousePos.x, y: mousePos.y },
+        image: { x: imagePos.x, y: imagePos.y },
+      })
+    }
+    return
+  }
+
   // Handle inspect mode - click to lock popup
   if (props.drawingMode === 'inspect') {
     const clickedShapeId = findShapeAtPosition(mousePos)
@@ -1080,7 +1102,12 @@ const handleMouseMove = (event) => {
     return
   }
 
-  if (props.drawingMode === 'none' || props.drawingMode === 'delete') return
+  if (
+    props.drawingMode === 'none' ||
+    props.drawingMode === 'delete' ||
+    props.drawingMode === 'click'
+  )
+    return
 
   const mousePos = getMousePos(event)
   currentPoint.value = mousePos
@@ -1542,8 +1569,13 @@ watch(
 watch(
   () => props.drawingMode,
   (newMode) => {
-    if (newMode === 'none' || newMode === 'delete' || newMode === 'inspect') {
-      // Reset drawing state when exiting drawing mode or entering delete/inspect mode
+    if (
+      newMode === 'none' ||
+      newMode === 'delete' ||
+      newMode === 'inspect' ||
+      newMode === 'click'
+    ) {
+      // Reset drawing state when exiting drawing mode or entering delete/inspect/click mode
       isDrawing.value = false
       polygonPoints.value = []
       freestylePath.value = []

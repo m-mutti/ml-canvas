@@ -115,12 +115,13 @@ const loadImage = async () => {
 ### Mode Overview
 ```javascript
 // Available drawing modes
-const modes = ['none', 'rectangle', 'polygon', 'freeform', 'delete', 'inspect']
+const modes = ['none', 'rectangle', 'polygon', 'freeform', 'delete', 'inspect', 'click']
 
 // Set drawing mode
 drawingMode.value = 'delete' // Click to remove shapes
 drawingMode.value = 'rectangle' // Draw rectangles
 drawingMode.value = 'inspect' // Inspect mode with magnified view
+drawingMode.value = 'click' // Click to get coordinates
 drawingMode.value = 'none' // No interaction
 ```
 
@@ -198,13 +199,46 @@ drawingMode.value = 'inspect'
 inspectPadding.value = 20 // Default is 20 pixels
 ```
 
+### Click Mode
+Get coordinates on click:
+```javascript
+// Set to click mode
+drawingMode.value = 'click'
+
+// Output format when canvas is clicked
+{
+  canvas: { x: 150, y: 200 },  // Display coordinates
+  image: { x: 300, y: 400 }     // Original image coordinates
+}
+
+// Listen for clicks
+<MLCanvas
+  drawingMode="click"
+  @canvas-clicked="handleClick"
+/>
+
+const handleClick = ({ canvas, image }) => {
+  console.log('Canvas coords:', canvas.x, canvas.y)
+  console.log('Image coords:', image.x, image.y)
+
+  // Use for point annotations, coordinate collection, etc.
+  addPointAnnotation(image.x, image.y)
+}
+
+// Features:
+// - Crosshair cursor for precise clicking
+// - Returns both canvas and image coordinates
+// - Useful for point annotations, landmarks, or coordinate collection
+// - No shapes are created
+```
+
 ## API Reference
 
 ### Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freeform'`, `'delete'`, `'inspect'` |
+| `drawingMode` | String | `'none'` | Drawing mode: `'none'`, `'rectangle'`, `'polygon'`, `'freeform'`, `'delete'`, `'inspect'`, `'click'` |
 | `pasteEnabled` | Boolean | `true` | Enable/disable image pasting from clipboard |
 | `freestyleSensitivity` | Number | `1` | Point density for freeform drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
@@ -220,6 +254,7 @@ inspectPadding.value = 20 // Default is 20 pixels
 | `canvas-reset` | `void` | Emitted when canvas is completely reset |
 | `image-pasted` | `imageData` | Emitted when an image is pasted from clipboard |
 | `statistics-updated` | `{ shapeId, statistics }` | Emitted when statistics are saved in inspect mode |
+| `canvas-clicked` | `{ canvas, image }` | Emitted when canvas is clicked in click mode |
 
 ### Methods
 
