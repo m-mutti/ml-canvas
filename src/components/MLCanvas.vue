@@ -341,6 +341,15 @@ const lockInspectPopup = (shapeId, event) => {
   if (inspectRef.value) {
     inspectRef.value.style.left = lockedPosition.value.x + 'px'
     inspectRef.value.style.top = lockedPosition.value.y + 'px'
+
+    // Ensure popup doesn't cross the bottom of the screen
+    nextTick(() => {
+      const popupRect = inspectRef.value.getBoundingClientRect()
+      if (popupRect.bottom > window.innerHeight) {
+        lockedPosition.value.y = Math.max(0, window.innerHeight - popupRect.height - 10)
+        inspectRef.value.style.top = lockedPosition.value.y + 'px'
+      }
+    })
   }
 
   inspectVisible.value = true
@@ -444,16 +453,28 @@ const updateInspect = (event) => {
 
   // Position inspect popup
   if (inspectRef.value) {
-    inspectRef.value.style.left = event.clientX + 20 + 'px'
-    inspectRef.value.style.top = event.clientY - 220 + 'px'
+    let popupX = event.clientX + 20
+    let popupY = event.clientY - 220
 
     // Adjust position if too close to edge
     if (event.clientX > window.innerWidth - 450) {
-      inspectRef.value.style.left = event.clientX - 420 + 'px'
+      popupX = event.clientX - 420
     }
     if (event.clientY < 250) {
-      inspectRef.value.style.top = event.clientY + 20 + 'px'
+      popupY = event.clientY + 20
     }
+
+    inspectRef.value.style.left = popupX + 'px'
+    inspectRef.value.style.top = popupY + 'px'
+
+    // Ensure popup doesn't cross the bottom of the screen
+    nextTick(() => {
+      const popupRect = inspectRef.value.getBoundingClientRect()
+      if (popupRect.bottom > window.innerHeight) {
+        const adjustedY = Math.max(0, window.innerHeight - popupRect.height - 10)
+        inspectRef.value.style.top = adjustedY + 'px'
+      }
+    })
   }
 
   // Draw the cropped image area with padding

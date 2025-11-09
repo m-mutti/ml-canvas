@@ -22,7 +22,7 @@ function injectCSS() {
   border-radius: 50%;
   pointer-events: none;
   display: none;
-  z-index: 1000;
+  z-index: 1000000;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
   background: white;
   overflow: hidden;
@@ -47,7 +47,7 @@ function injectCSS() {
   border-radius: 8px;
   pointer-events: none;
   display: none;
-  z-index: 1001;
+  z-index: 1000000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
   background: white;
   overflow: visible;
