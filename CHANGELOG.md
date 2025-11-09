@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/m-mutti/ml-canvas/compare/v0.4.0...v0.4.1) (2025-11-09)
+
+
+### Bug Fixes
+
+* adjust position of inspect modal if screen end is reached ([591e25e](https://github.com/m-mutti/ml-canvas/commit/591e25e4672e5b509e74caa622604b701c79773a))
+
 # [0.4.0](https://github.com/m-mutti/ml-canvas/compare/v0.3.7...v0.4.0) (2025-10-28)
 
 
