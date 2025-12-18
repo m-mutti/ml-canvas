@@ -1,3 +1,10 @@
+## [0.4.2](https://github.com/m-mutti/ml-canvas/compare/v0.4.1...v0.4.2) (2025-12-18)
+
+
+### Bug Fixes
+
+* only trigger canvas-clicked event by left click ([858840c](https://github.com/m-mutti/ml-canvas/commit/858840c0e62c961a073a1f26c79434ce84cff871))
+
 ## [0.4.1](https://github.com/m-mutti/ml-canvas/compare/v0.4.0...v0.4.1) (2025-11-09)
 
 
