@@ -1065,14 +1065,16 @@ const scaleToImageCoordinates = (canvasX, canvasY) => {
 const handleMouseDown = (event) => {
   const mousePos = getMousePos(event)
 
-  // Handle click mode - emit coordinates and return
+  // Handle click mode - emit coordinates and return (only for left-click)
   if (props.drawingMode === 'click') {
-    const imagePos = scaleToImageCoordinates(mousePos.x, mousePos.y)
-    if (imagePos) {
-      emit('canvas-clicked', {
-        canvas: { x: mousePos.x, y: mousePos.y },
-        image: { x: imagePos.x, y: imagePos.y },
-      })
+    if (event.button === 0) {
+      const imagePos = scaleToImageCoordinates(mousePos.x, mousePos.y)
+      if (imagePos) {
+        emit('canvas-clicked', {
+          canvas: { x: mousePos.x, y: mousePos.y },
+          image: { x: imagePos.x, y: imagePos.y },
+        })
+      }
     }
     return
   }
