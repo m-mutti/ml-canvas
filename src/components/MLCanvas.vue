@@ -107,6 +107,7 @@ const emit = defineEmits([
   'image-pasted',
   'statistics-updated',
   'canvas-clicked',
+  'canvas-double-clicked',
 ])
 
 const containerRef = ref(null)
@@ -1196,9 +1197,28 @@ const handleMouseLeave = () => {
   }
 }
 
-const handleDoubleClick = () => {
+const handleDoubleClick = (event) => {
+  // Only finish polygon if in polygon drawing mode with existing points
   if (props.drawingMode === 'polygon' && polygonPoints.value.length >= 2) {
     finishPolygon()
+    return
+  }
+
+  // Emit double-click event for non-drawing modes
+  if (
+    props.drawingMode !== 'rectangle' &&
+    props.drawingMode !== 'polygon' &&
+    props.drawingMode !== 'freestyle' &&
+    props.drawingMode !== 'freeform'
+  ) {
+    const mousePos = getMousePos(event)
+    const imagePos = scaleToImageCoordinates(mousePos.x, mousePos.y)
+    if (imagePos) {
+      emit('canvas-double-clicked', {
+        canvas: { x: mousePos.x, y: mousePos.y },
+        image: { x: imagePos.x, y: imagePos.y },
+      })
+    }
   }
 }
 
