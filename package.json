@@ -1,6 +1,6 @@
 {
   "name": "ml-canvas",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "A Vue.js canvas component designed for machine learning annotation tasks and AI tool development",
   "type": "module",
   "main": "./dist/ml-canvas.umd.js",

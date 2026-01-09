@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/m-mutti/ml-canvas/compare/v0.4.2...v0.5.0) (2026-01-09)
+
+
+### Features
+
+* added double click event emit ([61b216b](https://github.com/m-mutti/ml-canvas/commit/61b216b79ad0a2baa6ea213e4c8a7ff22376fe24))
+
 ## [0.4.2](https://github.com/m-mutti/ml-canvas/compare/v0.4.1...v0.4.2) (2025-12-18)
 
 
