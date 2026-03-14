@@ -26,6 +26,10 @@
       :class="{ visible: inspectVisible && props.drawingMode === 'inspect', locked: inspectLocked }"
     >
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
+      <div v-if="inspectedShapeInfo" class="inspect-shape-info">
+        <span class="shape-index">#{{ inspectedShapeInfo.index }}</span>
+        <span class="shape-id">{{ inspectedShapeInfo.id }}</span>
+      </div>
       <div v-if="currentShapeStatistics" class="inspect-statistics">
         <div class="statistics-card">
           <div v-for="(stat, index) in currentShapeStatistics" :key="index" class="statistic-item">
@@ -145,6 +149,7 @@ const inspectLocked = ref(false)
 const lockedShapeId = ref(null)
 const lockedPosition = ref({ x: 0, y: 0 })
 const editableStatistics = ref(null)
+const inspectedShapeInfo = ref(null) // { id, index } of the currently inspected shape
 
 let resizeTimeout = null
 
@@ -319,6 +324,7 @@ const lockInspectPopup = (shapeId, event) => {
 
   inspectLocked.value = true
   lockedShapeId.value = shapeId
+  inspectedShapeInfo.value = { id: shape.id, index: shape.index }
 
   // Create a deep copy of statistics for editing
   editableStatistics.value = JSON.parse(JSON.stringify(shape.displayStatistics))
@@ -365,6 +371,7 @@ const cancelInspectLock = () => {
   inspectVisible.value = false
   currentShapeStatistics.value = null
   hoveredShapeId.value = null
+  inspectedShapeInfo.value = null
 }
 
 // Save statistics changes
@@ -415,6 +422,7 @@ const updateInspect = (event) => {
     inspectVisible.value = false
     hoveredShapeId.value = null
     currentShapeStatistics.value = null
+    inspectedShapeInfo.value = null
     return
   }
 
@@ -425,6 +433,7 @@ const updateInspect = (event) => {
     inspectVisible.value = false
     hoveredShapeId.value = null
     currentShapeStatistics.value = null
+    inspectedShapeInfo.value = null
     return
   }
 
@@ -433,8 +442,12 @@ const updateInspect = (event) => {
   if (!shape) {
     inspectVisible.value = false
     currentShapeStatistics.value = null
+    inspectedShapeInfo.value = null
     return
   }
+
+  // Store shape id and index for display in inspect popup
+  inspectedShapeInfo.value = { id: shape.id, index: shape.index }
 
   // Update statistics if the shape has displayStatistics
   if (shape.displayStatistics && Array.isArray(shape.displayStatistics)) {
@@ -536,6 +549,36 @@ const updateInspect = (event) => {
       inspectCtx.value.lineWidth = 3 / scale
       inspectCtx.value.stroke()
     }
+  }
+
+  inspectCtx.value.restore()
+
+  // Draw shape index and ID label on the inspect canvas
+  inspectCtx.value.save()
+  inspectCtx.value.translate(offsetX, offsetY)
+  inspectCtx.value.scale(scale, scale)
+  inspectCtx.value.translate(-cropX, -cropY)
+
+  const fontSize = 16 / scale
+  inspectCtx.value.font = `bold ${fontSize}px Arial`
+  inspectCtx.value.lineWidth = 3 / scale
+  const label = `#${shape.index}`
+  const color = shape.style.strokeStyle || '#00ff00'
+
+  let labelX, labelY
+  if (shape.type === 'rectangle') {
+    labelX = shape.image.x
+    labelY = shape.image.y - 5 / scale
+  } else if (shape.image && shape.image.length > 0) {
+    labelX = shape.image[0].x
+    labelY = shape.image[0].y - 5 / scale
+  }
+
+  if (labelX != null) {
+    inspectCtx.value.strokeStyle = '#ffffff'
+    inspectCtx.value.strokeText(label, labelX, labelY)
+    inspectCtx.value.fillStyle = color
+    inspectCtx.value.fillText(label, labelX, labelY)
   }
 
   inspectCtx.value.restore()

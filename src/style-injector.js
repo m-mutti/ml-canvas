@@ -68,10 +68,37 @@ function injectCSS() {
   height: 400px;
 }
 
-.inspect-statistics {
+.inspect-shape-info {
   position: relative;
   width: 100%;
   margin-top: 400px;
+  padding: 8px 12px;
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.inspect-shape-info .shape-index {
+  font-weight: bold;
+  font-size: 16px;
+  color: #00ff00;
+  font-family: monospace;
+}
+
+.inspect-shape-info .shape-id {
+  font-size: 12px;
+  color: #aaaacc;
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspect-statistics {
+  position: relative;
+  width: 100%;
   padding: 12px;
   background: white;
   border-top: 1px solid #e0e0e0;
