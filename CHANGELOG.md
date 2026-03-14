@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/m-mutti/ml-canvas/compare/v0.5.0...v0.5.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* shape stats in inspect ([f080e74](https://github.com/m-mutti/ml-canvas/commit/f080e7467f5176abaa7911ba9cf898166cebb754))
+
 # [0.5.0](https://github.com/m-mutti/ml-canvas/compare/v0.4.2...v0.5.0) (2026-01-09)
 
 
