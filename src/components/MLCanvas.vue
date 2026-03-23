@@ -735,6 +735,40 @@ const drawPolygon = (points, options = {}) => {
   return shape
 }
 
+const drawPolygons = (polygons) => {
+  if (!ctx.value || !polygons || polygons.length === 0) return []
+
+  const shapes = polygons
+    .map(({ points, options = {} }) => {
+      if (!points || points.length < 3) return null
+
+      const {
+        fillStyle = null,
+        strokeStyle = '#000000',
+        lineWidth = 1,
+        lineDash = [],
+        closePath = true,
+        displayStatistics = null,
+      } = options
+
+      const canvasPoints = points.map((p) => scaleToCanvasCoordinates(p.x, p.y))
+
+      return storeShape(
+        'polygon',
+        canvasPoints,
+        points,
+        { fillStyle, strokeStyle, lineWidth, lineDash, closePath },
+        displayStatistics,
+      )
+    })
+    .filter(Boolean)
+
+  // Single redraw after all shapes are stored
+  redrawCanvas()
+
+  return shapes
+}
+
 const clearCanvasRect = () => {
   if (!ctx.value) return
   ctx.value.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
@@ -1843,6 +1877,7 @@ defineExpose({
   addImage,
   drawRectangle,
   drawPolygon,
+  drawPolygons,
   clearCanvas,
   resetCanvas,
   getContext,
