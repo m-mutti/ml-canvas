@@ -1680,6 +1680,13 @@ const resetCanvas = () => {
 
 // Watch for prop changes
 watch(
+  () => props.showIndex,
+  () => {
+    redrawCanvas()
+  },
+)
+
+watch(
   () => props.pasteEnabled,
   (newValue) => {
     imagePasteEnabled.value = newValue
