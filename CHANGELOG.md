@@ -1,3 +1,10 @@
+## [0.5.3](https://github.com/m-mutti/ml-canvas/compare/v0.5.2...v0.5.3) (2026-03-24)
+
+
+### Bug Fixes
+
+* redraw when showIndex is changed ([37ebe5d](https://github.com/m-mutti/ml-canvas/commit/37ebe5de921a747c9043d67467a933f5b4a4b629))
+
 ## [0.5.2](https://github.com/m-mutti/ml-canvas/compare/v0.5.1...v0.5.2) (2026-03-23)
 
 
