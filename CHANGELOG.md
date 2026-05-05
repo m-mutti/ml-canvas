@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/m-mutti/ml-canvas/compare/v0.5.3...v0.6.0) (2026-05-05)
+
+
+### Features
+
+* added ability to control the inspect popover configuration ([1abdbb9](https://github.com/m-mutti/ml-canvas/commit/1abdbb95dfe95309058769413a76513f74baa15f))
+
 ## [0.5.3](https://github.com/m-mutti/ml-canvas/compare/v0.5.2...v0.5.3) (2026-03-24)
 
 
