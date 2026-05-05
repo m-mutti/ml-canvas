@@ -197,6 +197,9 @@ drawingMode.value = 'inspect'
 
 // Customize padding around inspected area (in image pixels)
 inspectPadding.value = 20 // Default is 20 pixels
+
+// Hide the index drawn on the inspect preview canvas while keeping header values
+inspectPopoverConfiguration.value = { canvas: { showShapeIndex: false } }
 ```
 
 ### Click Mode
@@ -243,6 +246,7 @@ const handleClick = ({ canvas, image }) => {
 | `freestyleSensitivity` | Number | `1` | Point density for freeform drawing (0.1-10) |
 | `simplificationTolerance` | Number | `2` | Path simplification tolerance (0.1-20) |
 | `inspectPadding` | Number | `20` | Padding around shape in inspect mode (in image pixels) |
+| `inspectPopoverConfiguration` | Object | `{}` | Configure inspect popover labels. Supports `header.show`, `header.showShapeIndex`, `header.showShapeId`, and `canvas.showShapeIndex` |
 | `showIndex` | Boolean | `false` | Show 1-based index number on each shape |
 
 ### Events
@@ -373,6 +377,15 @@ if (shape) {
 ```javascript
 // Enable index display on all shapes
 <MLCanvas :showIndex="true" />
+
+// Hide the index drawn on the inspect preview canvas while keeping header values
+<MLCanvas :inspectPopoverConfiguration="{ canvas: { showShapeIndex: false } }" />
+
+// Hide generated shape IDs in the inspect header while keeping the header bar
+<MLCanvas :inspectPopoverConfiguration="{ header: { showShapeId: false } }" />
+
+// Hide the whole inspect header bar
+<MLCanvas :inspectPopoverConfiguration="{ header: { show: false } }" />
 
 // Each shape gets a 1-based index in creation order
 // When shapes are deleted, subsequent shapes automatically take lower indices

@@ -162,6 +162,13 @@
  * @property {number} [freestyleSensitivity=1] - Sensitivity for freeform drawing (0.1-10)
  * @property {number} [simplificationTolerance=2] - Path simplification tolerance (0.1-20)
  * @property {boolean} [showIndex=false] - Show 1-based index number on each shape
+ * @property {Object} [inspectPopoverConfiguration] - Configure inspect popover labels
+ * @property {Object} [inspectPopoverConfiguration.header] - Configure the inspect popover header bar
+ * @property {boolean} [inspectPopoverConfiguration.header.show=true] - Show the inspect popover header bar
+ * @property {boolean} [inspectPopoverConfiguration.header.showShapeIndex=true] - Show shape index in the inspect popover header
+ * @property {boolean} [inspectPopoverConfiguration.header.showShapeId=true] - Show shape ID in the inspect popover header
+ * @property {Object} [inspectPopoverConfiguration.canvas] - Configure labels drawn on the inspect preview canvas
+ * @property {boolean} [inspectPopoverConfiguration.canvas.showShapeIndex=true] - Show shape index on the inspect preview canvas
  */
 
 /**

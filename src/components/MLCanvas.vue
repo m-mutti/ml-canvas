@@ -26,9 +26,16 @@
       :class="{ visible: inspectVisible && props.drawingMode === 'inspect', locked: inspectLocked }"
     >
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
-      <div v-if="inspectedShapeInfo" class="inspect-shape-info">
-        <span class="shape-index">#{{ inspectedShapeInfo.index }}</span>
-        <span class="shape-id">{{ inspectedShapeInfo.id }}</span>
+      <div
+        v-if="inspectedShapeInfo && resolvedInspectPopoverConfiguration.header.show"
+        class="inspect-shape-info"
+      >
+        <span v-if="resolvedInspectPopoverConfiguration.header.showShapeIndex" class="shape-index"
+          >#{{ inspectedShapeInfo.index }}</span
+        >
+        <span v-if="resolvedInspectPopoverConfiguration.header.showShapeId" class="shape-id">{{
+          inspectedShapeInfo.id
+        }}</span>
       </div>
       <div v-if="currentShapeStatistics" class="inspect-statistics">
         <div class="statistics-card">
@@ -102,6 +109,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  inspectPopoverConfiguration: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
 const emit = defineEmits([
@@ -131,6 +142,7 @@ const freestylePath = ref([])
 const drawnShapes = ref([])
 const imageInfo = ref(null) // Stores image position and scale info
 let shapeIdCounter = 0 // Counter for generating unique shape IDs
+const highlightedShapeId = ref(null)
 
 // Magnifier state
 const magnifierRef = ref(null)
@@ -170,6 +182,21 @@ const drawingModeCursor = computed(() => {
     case 'none':
     default:
       return 'default'
+  }
+})
+
+const resolvedInspectPopoverConfiguration = computed(() => {
+  const config = props.inspectPopoverConfiguration || {}
+
+  return {
+    header: {
+      show: config.header?.show ?? config.showHeader ?? true,
+      showShapeIndex: config.header?.showShapeIndex ?? config.showShapeIndex ?? true,
+      showShapeId: config.header?.showShapeId ?? config.showShapeId ?? true,
+    },
+    canvas: {
+      showShapeIndex: config.canvas?.showShapeIndex ?? config.showCanvasShapeIndex ?? true,
+    },
   }
 })
 
@@ -315,6 +342,22 @@ const getBoundingBox = (shape) => {
   return null
 }
 
+const clampInspectPopupToViewport = () => {
+  if (!inspectRef.value) return null
+
+  const margin = 10
+  const popupRect = inspectRef.value.getBoundingClientRect()
+  const maxLeft = Math.max(margin, window.innerWidth - popupRect.width - margin)
+  const maxTop = Math.max(margin, window.innerHeight - popupRect.height - margin)
+  const left = Math.min(Math.max(margin, popupRect.left), maxLeft)
+  const top = Math.min(Math.max(margin, popupRect.top), maxTop)
+
+  inspectRef.value.style.left = left + 'px'
+  inspectRef.value.style.top = top + 'px'
+
+  return { x: left, y: top }
+}
+
 // Lock inspect popup on click
 const lockInspectPopup = (shapeId, event) => {
   const shape = findShapeById(shapeId)
@@ -349,12 +392,10 @@ const lockInspectPopup = (shapeId, event) => {
     inspectRef.value.style.left = lockedPosition.value.x + 'px'
     inspectRef.value.style.top = lockedPosition.value.y + 'px'
 
-    // Ensure popup doesn't cross the bottom of the screen
     nextTick(() => {
-      const popupRect = inspectRef.value.getBoundingClientRect()
-      if (popupRect.bottom > window.innerHeight) {
-        lockedPosition.value.y = Math.max(0, window.innerHeight - popupRect.height - 10)
-        inspectRef.value.style.top = lockedPosition.value.y + 'px'
+      const clampedPosition = clampInspectPopupToViewport()
+      if (clampedPosition) {
+        lockedPosition.value = clampedPosition
       }
     })
   }
@@ -481,13 +522,8 @@ const updateInspect = (event) => {
     inspectRef.value.style.left = popupX + 'px'
     inspectRef.value.style.top = popupY + 'px'
 
-    // Ensure popup doesn't cross the bottom of the screen
     nextTick(() => {
-      const popupRect = inspectRef.value.getBoundingClientRect()
-      if (popupRect.bottom > window.innerHeight) {
-        const adjustedY = Math.max(0, window.innerHeight - popupRect.height - 10)
-        inspectRef.value.style.top = adjustedY + 'px'
-      }
+      clampInspectPopupToViewport()
     })
   }
 
@@ -553,35 +589,37 @@ const updateInspect = (event) => {
 
   inspectCtx.value.restore()
 
-  // Draw shape index and ID label on the inspect canvas
-  inspectCtx.value.save()
-  inspectCtx.value.translate(offsetX, offsetY)
-  inspectCtx.value.scale(scale, scale)
-  inspectCtx.value.translate(-cropX, -cropY)
+  if (resolvedInspectPopoverConfiguration.value.canvas.showShapeIndex) {
+    // Draw shape index label on the inspect canvas.
+    inspectCtx.value.save()
+    inspectCtx.value.translate(offsetX, offsetY)
+    inspectCtx.value.scale(scale, scale)
+    inspectCtx.value.translate(-cropX, -cropY)
 
-  const fontSize = 16 / scale
-  inspectCtx.value.font = `bold ${fontSize}px Arial`
-  inspectCtx.value.lineWidth = 3 / scale
-  const label = `#${shape.index}`
-  const color = shape.style.strokeStyle || '#00ff00'
+    const fontSize = 16 / scale
+    inspectCtx.value.font = `bold ${fontSize}px Arial`
+    inspectCtx.value.lineWidth = 3 / scale
+    const label = `#${shape.index}`
+    const color = shape.style.strokeStyle || '#00ff00'
 
-  let labelX, labelY
-  if (shape.type === 'rectangle') {
-    labelX = shape.image.x
-    labelY = shape.image.y - 5 / scale
-  } else if (shape.image && shape.image.length > 0) {
-    labelX = shape.image[0].x
-    labelY = shape.image[0].y - 5 / scale
+    let labelX, labelY
+    if (shape.type === 'rectangle') {
+      labelX = shape.image.x
+      labelY = shape.image.y - 5 / scale
+    } else if (shape.image && shape.image.length > 0) {
+      labelX = shape.image[0].x
+      labelY = shape.image[0].y - 5 / scale
+    }
+
+    if (labelX != null) {
+      inspectCtx.value.strokeStyle = '#ffffff'
+      inspectCtx.value.strokeText(label, labelX, labelY)
+      inspectCtx.value.fillStyle = color
+      inspectCtx.value.fillText(label, labelX, labelY)
+    }
+
+    inspectCtx.value.restore()
   }
-
-  if (labelX != null) {
-    inspectCtx.value.strokeStyle = '#ffffff'
-    inspectCtx.value.strokeText(label, labelX, labelY)
-    inspectCtx.value.fillStyle = color
-    inspectCtx.value.fillText(label, labelX, labelY)
-  }
-
-  inspectCtx.value.restore()
 }
 
 const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -827,6 +865,14 @@ const renderShape = (shape) => {
   if (!ctx.value || !shape) return
 
   const { type, canvas: canvasData, style, index } = shape
+  const isHighlighting = highlightedShapeId.value !== null
+  const isHighlighted = highlightedShapeId.value === shape.id
+
+  // Dim non-highlighted shapes when a highlight is active
+  if (isHighlighting && !isHighlighted) {
+    ctx.value.save()
+    ctx.value.globalAlpha = 0.3
+  }
 
   if (type === 'rectangle') {
     const { x, y, width, height } = canvasData
@@ -838,15 +884,24 @@ const renderShape = (shape) => {
       ctx.value.setLineDash(lineDash)
     }
 
-    if (fillStyle) {
-      ctx.value.fillStyle = fillStyle
+    if (isHighlighted) {
+      // Highlighted: fill with translucent overlay and thicker stroke
+      ctx.value.fillStyle = (strokeStyle || '#000000') + '40'
       ctx.value.fillRect(x, y, width, height)
-    }
-
-    if (strokeStyle) {
-      ctx.value.strokeStyle = strokeStyle
-      ctx.value.lineWidth = lineWidth
+      ctx.value.strokeStyle = strokeStyle || '#000000'
+      ctx.value.lineWidth = lineWidth * 3
       ctx.value.strokeRect(x, y, width, height)
+    } else {
+      if (fillStyle) {
+        ctx.value.fillStyle = fillStyle
+        ctx.value.fillRect(x, y, width, height)
+      }
+
+      if (strokeStyle) {
+        ctx.value.strokeStyle = strokeStyle
+        ctx.value.lineWidth = lineWidth
+        ctx.value.strokeRect(x, y, width, height)
+      }
     }
 
     ctx.value.restore()
@@ -889,15 +944,24 @@ const renderShape = (shape) => {
       ctx.value.closePath()
     }
 
-    if (fillStyle) {
-      ctx.value.fillStyle = fillStyle
+    if (isHighlighted) {
+      // Highlighted: fill with translucent overlay and thicker stroke
+      ctx.value.fillStyle = (strokeStyle || '#00ff00') + '40'
       ctx.value.fill()
-    }
-
-    if (strokeStyle) {
-      ctx.value.strokeStyle = strokeStyle
-      ctx.value.lineWidth = lineWidth
+      ctx.value.strokeStyle = strokeStyle || '#00ff00'
+      ctx.value.lineWidth = lineWidth * 3
       ctx.value.stroke()
+    } else {
+      if (fillStyle) {
+        ctx.value.fillStyle = fillStyle
+        ctx.value.fill()
+      }
+
+      if (strokeStyle) {
+        ctx.value.strokeStyle = strokeStyle
+        ctx.value.lineWidth = lineWidth
+        ctx.value.stroke()
+      }
     }
 
     ctx.value.restore()
@@ -907,6 +971,21 @@ const renderShape = (shape) => {
       drawShapeIndex(points[0].x - 25, points[0].y - 5, index, strokeStyle)
     }
   }
+
+  // Restore alpha for dimmed shapes
+  if (isHighlighting && !isHighlighted) {
+    ctx.value.restore()
+  }
+}
+
+const highlightShape = (shapeId) => {
+  highlightedShapeId.value = shapeId
+  redrawCanvas()
+}
+
+const unhighlightShape = () => {
+  highlightedShapeId.value = null
+  redrawCanvas()
 }
 
 // Draw index number on shape
@@ -1885,6 +1964,8 @@ defineExpose({
   drawRectangle,
   drawPolygon,
   drawPolygons,
+  highlightShape,
+  unhighlightShape,
   clearCanvas,
   resetCanvas,
   getContext,

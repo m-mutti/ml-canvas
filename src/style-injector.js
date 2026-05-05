@@ -42,7 +42,7 @@ function injectCSS() {
 .inspect-popup {
   position: fixed;
   width: 400px;
-  min-height: 400px;
+  max-height: calc(100vh - 20px);
   border: 3px solid #00ff00;
   border-radius: 8px;
   pointer-events: none;
@@ -50,11 +50,12 @@ function injectCSS() {
   z-index: 1000000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
   background: white;
-  overflow: visible;
+  overflow: hidden;
+  flex-direction: column;
 }
 
 .inspect-popup.visible {
-  display: block;
+  display: flex;
 }
 
 .inspect-popup.locked {
@@ -63,15 +64,15 @@ function injectCSS() {
 }
 
 .inspect-canvas {
-  position: absolute;
+  display: block;
+  flex: 0 0 400px;
   width: 400px;
   height: 400px;
 }
 
 .inspect-shape-info {
-  position: relative;
+  flex: 0 0 auto;
   width: 100%;
-  margin-top: 400px;
   padding: 8px 12px;
   background: #1a1a2e;
   display: flex;
@@ -97,11 +98,13 @@ function injectCSS() {
 }
 
 .inspect-statistics {
-  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   padding: 12px;
   background: white;
   border-top: 1px solid #e0e0e0;
+  overflow-y: auto;
 }
 
 .statistics-card {
