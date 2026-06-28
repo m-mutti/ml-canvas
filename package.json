@@ -51,8 +51,9 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "lint": "eslint . --fix",
+    "lint:check": "eslint .",
     "format": "prettier --write src/",
-    "prepare": "npm run build"
+    "prepare": "npm run build && husky"
   },
   "dependencies": {
     "vue": "^3.0.0"
@@ -75,6 +76,7 @@
     "eslint": "^9.31.0",
     "eslint-plugin-vue": "~10.3.0",
     "globals": "^16.3.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "prettier": "3.6.2",
     "semantic-release": "^25.0.2",

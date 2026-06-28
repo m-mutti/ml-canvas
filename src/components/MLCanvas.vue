@@ -200,6 +200,10 @@ const resolvedInspectPopoverConfiguration = computed(() => {
   }
 })
 
+const shouldShowShapeIndex = (shape, defaultValue) => {
+  return typeof shape.showIndex === 'boolean' ? shape.showIndex : defaultValue
+}
+
 const updateCanvasSize = () => {
   if (!containerRef.value) return
 
@@ -589,7 +593,9 @@ const updateInspect = (event) => {
 
   inspectCtx.value.restore()
 
-  if (resolvedInspectPopoverConfiguration.value.canvas.showShapeIndex) {
+  if (
+    shouldShowShapeIndex(shape, resolvedInspectPopoverConfiguration.value.canvas.showShapeIndex)
+  ) {
     // Draw shape index label on the inspect canvas.
     inspectCtx.value.save()
     inspectCtx.value.translate(offsetX, offsetY)
@@ -680,6 +686,7 @@ const drawRectangle = (x, y, width, height, options = {}) => {
     lineWidth = 1,
     lineDash = [],
     displayStatistics = null,
+    showIndex = undefined,
   } = options
 
   // Image coordinate data (what was passed in)
@@ -708,6 +715,7 @@ const drawRectangle = (x, y, width, height, options = {}) => {
       lineDash,
     },
     displayStatistics,
+    { showIndex },
   )
 
   // Redraw entire canvas to preserve image and show new shape
@@ -748,6 +756,7 @@ const drawPolygon = (points, options = {}) => {
     lineDash = [],
     closePath = true,
     displayStatistics = null,
+    showIndex = undefined,
   } = options
 
   // Convert image coordinates to canvas coordinates
@@ -766,6 +775,7 @@ const drawPolygon = (points, options = {}) => {
       closePath,
     },
     displayStatistics,
+    { showIndex },
   )
   // Redraw entire canvas to preserve image and show new shape
   redrawCanvas()
@@ -787,6 +797,7 @@ const drawPolygons = (polygons) => {
         lineDash = [],
         closePath = true,
         displayStatistics = null,
+        showIndex = undefined,
       } = options
 
       const canvasPoints = points.map((p) => scaleToCanvasCoordinates(p.x, p.y))
@@ -797,6 +808,7 @@ const drawPolygons = (polygons) => {
         points,
         { fillStyle, strokeStyle, lineWidth, lineDash, closePath },
         displayStatistics,
+        { showIndex },
       )
     })
     .filter(Boolean)
@@ -832,7 +844,14 @@ const generateShapeId = () => {
 }
 
 // Common function to store drawn shapes with IDs
-const storeShape = (type, canvasData, imageData = null, style = {}, displayStatistics = null) => {
+const storeShape = (
+  type,
+  canvasData,
+  imageData = null,
+  style = {},
+  displayStatistics = null,
+  shapeOptions = {},
+) => {
   const shape = {
     id: generateShapeId(),
     type,
@@ -841,6 +860,10 @@ const storeShape = (type, canvasData, imageData = null, style = {}, displayStati
     style,
     timestamp: Date.now(),
     index: drawnShapes.value.length + 1, // 1-based index
+  }
+
+  if (typeof shapeOptions.showIndex === 'boolean') {
+    shape.showIndex = shapeOptions.showIndex
   }
 
   // Add displayStatistics if provided
@@ -907,7 +930,7 @@ const renderShape = (shape) => {
     ctx.value.restore()
 
     // Draw index if showIndex is enabled (outside top-left corner)
-    if (props.showIndex) {
+    if (shouldShowShapeIndex(shape, props.showIndex)) {
       drawShapeIndex(x - 25, y - 5, index, strokeStyle)
     }
   } else if (type === 'polygon' || type === 'freestyle' || type === 'freeform') {
@@ -967,7 +990,7 @@ const renderShape = (shape) => {
     ctx.value.restore()
 
     // Draw index if showIndex is enabled (outside the first point)
-    if (props.showIndex && points.length > 0) {
+    if (shouldShowShapeIndex(shape, props.showIndex) && points.length > 0) {
       drawShapeIndex(points[0].x - 25, points[0].y - 5, index, strokeStyle)
     }
   }
@@ -1667,6 +1690,23 @@ const clearDrawnShapes = () => {
   redrawCanvas()
 }
 
+const setShapeIndexVisibility = (cellId, showIndex) => {
+  const shape = findShapeById(cellId)
+  if (!shape) {
+    console.warn(`Shape with ID ${cellId} not found`)
+    return null
+  }
+
+  if (typeof showIndex === 'boolean') {
+    shape.showIndex = showIndex
+  } else {
+    delete shape.showIndex
+  }
+
+  redrawCanvas()
+  return shape
+}
+
 // Find shape at clicked position - returns shape ID instead of index
 const findShapeAtPosition = (mousePos) => {
   for (let i = drawnShapes.value.length - 1; i >= 0; i--) {
@@ -1984,6 +2024,7 @@ defineExpose({
   renderShape,
   storeShape,
   setMagnifierEnabled,
+  setShapeIndexVisibility,
   updateDisplayStatistics,
   updateDisplayStatistic,
   addDisplayStatistic,

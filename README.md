@@ -280,6 +280,7 @@ const handleClick = ({ canvas, image }) => {
 | `findShapeAtPosition(point)` | Mouse coordinates | Find shape ID at position |
 | `renderShape(shape)` | Shape object | Render individual shape |
 | `storeShape(type, canvas, image, style)` | Shape data | Common storage function |
+| `setShapeIndexVisibility(id, showIndex)` | Shape ID and boolean/undefined | Override or reset index visibility for a shape |
 | `updateDisplayStatistics(cellId, statistics, emitEvent?)` | Shape ID, statistics array, emit event (default: true) | Replace all displayStatistics for a shape |
 | `updateDisplayStatistic(cellId, statisticName, newValue, emitEvent?)` | Shape ID, statistic name, new value, emit event (default: true) | Update a single statistic value |
 | `addDisplayStatistic(cellId, statistic, emitEvent?)` | Shape ID, statistic object, emit event (default: true) | Add a new statistic to a shape |
@@ -377,6 +378,15 @@ if (shape) {
 ```javascript
 // Enable index display on all shapes
 <MLCanvas :showIndex="true" />
+
+// Override index display for one programmatically drawn shape
+canvasRef.value.drawRectangle(100, 50, 200, 150, {
+  showIndex: false
+})
+
+// Update an existing shape. Pass undefined to fall back to the global showIndex prop.
+canvasRef.value.setShapeIndexVisibility('shape-id', false)
+canvasRef.value.setShapeIndexVisibility('shape-id', undefined)
 
 // Hide the index drawn on the inspect preview canvas while keeping header values
 <MLCanvas :inspectPopoverConfiguration="{ canvas: { showShapeIndex: false } }" />

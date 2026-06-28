@@ -18,6 +18,7 @@
  * @property {string} [strokeStyle='#000000'] - Stroke color
  * @property {number} [lineWidth=1] - Line width
  * @property {number[]} [lineDash=[]] - Line dash pattern
+ * @property {boolean} [showIndex] - Override global index display for this shape
  */
 
 /**
@@ -27,6 +28,7 @@
  * @property {number} [lineWidth=1] - Line width
  * @property {number[]} [lineDash=[]] - Line dash pattern
  * @property {boolean} [closePath=true] - Whether to close the polygon path
+ * @property {boolean} [showIndex] - Override global index display for this shape
  */
 
 /**
@@ -36,6 +38,7 @@
  * @property {number} [lineWidth=2] - Line width
  * @property {number[]} [lineDash=[]] - Line dash pattern
  * @property {boolean} [closePath=true] - Whether to close the freestyle path
+ * @property {boolean} [showIndex] - Override global index display for this shape
  */
 
 /**
@@ -64,6 +67,7 @@
  * @property {ShapeStyle} style - Shape styling options
  * @property {number} timestamp - Creation timestamp
  * @property {number} index - 1-based index indicating order of creation
+ * @property {boolean} [showIndex] - Optional per-shape override for index display
  * @property {Statistic[]} [displayStatistics] - Optional array of statistics to display in inspect mode
  */
 
@@ -190,6 +194,7 @@
  * @property {function(string): Shape|null} findShapeById - Find shape by ID
  * @property {function(Shape): void} renderShape - Render a single shape
  * @property {function(string, Rectangle|Point[], Rectangle|Point[], ShapeStyle?): Shape} storeShape - Store shape with common function
+ * @property {function(string, boolean|undefined): Shape|null} setShapeIndexVisibility - Override or reset index visibility for a shape
  * @property {function(): CanvasRenderingContext2D|null} getContext - Get canvas 2D context
  * @property {function(): HTMLCanvasElement|null} getCanvas - Get canvas element
  * @property {function(): CanvasSize} getCanvasSize - Get canvas dimensions
