@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/m-mutti/ml-canvas/compare/v0.6.0...v0.7.0) (2026-06-28)
+
+
+### Features
+
+* added the ability to change individual cell's index show ([cc53e81](https://github.com/m-mutti/ml-canvas/commit/cc53e818095bc6b8f37400db04f0ab28b43211db))
+
 # [0.6.0](https://github.com/m-mutti/ml-canvas/compare/v0.5.3...v0.6.0) (2026-05-05)
 
 
