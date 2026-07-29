@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/m-mutti/ml-canvas/compare/v0.7.0...v0.8.0) (2026-07-29)
+
+
+### Features
+
+* make the inspect popup configurable — slot, exposed actions, theming, button labels ([c89c9ec](https://github.com/m-mutti/ml-canvas/commit/c89c9ecda83fb516b1b9c3f2b49e5b00cc1dc591))
+
 # [0.7.0](https://github.com/m-mutti/ml-canvas/compare/v0.6.0...v0.7.0) (2026-06-28)
 
 
