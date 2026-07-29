@@ -23,41 +23,62 @@
     <div
       ref="inspectRef"
       class="inspect-popup"
-      :class="{ visible: inspectVisible && props.drawingMode === 'inspect', locked: inspectLocked }"
+      :class="[
+        { visible: inspectVisible && props.drawingMode === 'inspect', locked: inspectLocked },
+        inspectPopupClass,
+      ]"
     >
       <canvas ref="inspectCanvasRef" class="inspect-canvas"></canvas>
-      <div
-        v-if="inspectedShapeInfo && resolvedInspectPopoverConfiguration.header.show"
-        class="inspect-shape-info"
+      <slot
+        name="inspect-content"
+        :shape-info="inspectedShapeInfo"
+        :config="resolvedInspectPopoverConfiguration"
+        :stats="currentShapeStatistics"
+        :editable-stats="editableStatistics"
+        :locked="inspectLocked"
+        :save="saveStatistics"
+        :remove="deleteShape"
+        :cancel="cancelInspectLock"
       >
-        <span v-if="resolvedInspectPopoverConfiguration.header.showShapeIndex" class="shape-index"
-          >#{{ inspectedShapeInfo.index }}</span
+        <div
+          v-if="inspectedShapeInfo && resolvedInspectPopoverConfiguration.header.show"
+          class="inspect-shape-info"
         >
-        <span v-if="resolvedInspectPopoverConfiguration.header.showShapeId" class="shape-id">{{
-          inspectedShapeInfo.id
-        }}</span>
-      </div>
-      <div v-if="currentShapeStatistics" class="inspect-statistics">
-        <div class="statistics-card">
-          <div v-for="(stat, index) in currentShapeStatistics" :key="index" class="statistic-item">
-            <span class="stat-name">{{ stat.name }}:</span>
-            <input
-              v-if="inspectLocked && stat.editable !== false"
-              :type="stat.type === 'number' ? 'number' : 'text'"
-              class="stat-value-input"
-              v-model="editableStatistics[index].value"
-            />
-            <span v-else class="stat-value">{{ stat.value }}</span>
+          <span v-if="resolvedInspectPopoverConfiguration.header.showShapeIndex" class="shape-index"
+            >#{{ inspectedShapeInfo.index }}</span
+          >
+          <span v-if="resolvedInspectPopoverConfiguration.header.showShapeId" class="shape-id">{{
+            inspectedShapeInfo.id
+          }}</span>
+        </div>
+        <div v-if="currentShapeStatistics" class="inspect-statistics">
+          <div class="statistics-card">
+            <div v-for="(stat, index) in currentShapeStatistics" :key="index" class="statistic-item">
+              <span class="stat-name">{{ stat.name }}:</span>
+              <input
+                v-if="inspectLocked && stat.editable !== false"
+                :type="stat.type === 'number' ? 'number' : 'text'"
+                class="stat-value-input"
+                v-model="editableStatistics[index].value"
+              />
+              <span v-else class="stat-value">{{ stat.value }}</span>
+            </div>
+          </div>
+          <div v-if="inspectLocked" class="inspect-buttons">
+            <div class="inspect-buttons-row">
+              <button class="save-button" @click="saveStatistics">
+                {{ resolvedInspectPopoverConfiguration.buttons.saveLabel }}
+              </button>
+              <button class="delete-button" @click="deleteShape">
+                {{ resolvedInspectPopoverConfiguration.buttons.deleteLabel }}
+              </button>
+            </div>
+            <button class="cancel-button" @click="cancelInspectLock">
+              {{ resolvedInspectPopoverConfiguration.buttons.cancelLabel }}
+            </button>
           </div>
         </div>
-        <div v-if="inspectLocked" class="inspect-buttons">
-          <div class="inspect-buttons-row">
-            <button class="save-button" @click="saveStatistics">Save</button>
-            <button class="delete-button" @click="deleteShape">Delete</button>
-          </div>
-          <button class="cancel-button" @click="cancelInspectLock">Cancel</button>
-        </div>
-      </div>
+      </slot>
     </div>
   </div>
 </template>
@@ -112,6 +133,10 @@ const props = defineProps({
   inspectPopoverConfiguration: {
     type: Object,
     default: () => ({}),
+  },
+  inspectPopupClass: {
+    type: [String, Array, Object],
+    default: '',
   },
 })
 
@@ -196,6 +221,11 @@ const resolvedInspectPopoverConfiguration = computed(() => {
     },
     canvas: {
       showShapeIndex: config.canvas?.showShapeIndex ?? config.showCanvasShapeIndex ?? true,
+    },
+    buttons: {
+      saveLabel: config.buttons?.saveLabel ?? 'Save',
+      deleteLabel: config.buttons?.deleteLabel ?? 'Delete',
+      cancelLabel: config.buttons?.cancelLabel ?? 'Cancel',
     },
   }
 })
@@ -1999,7 +2029,13 @@ const setMagnifierEnabled = (enabled) => {
   }
 }
 
+const isInspectLocked = () => inspectLocked.value
+
 defineExpose({
+  saveStatistics,
+  deleteShape,
+  cancelInspectLock,
+  isInspectLocked,
   addImage,
   drawRectangle,
   drawPolygon,

@@ -43,13 +43,13 @@ function injectCSS() {
   position: fixed;
   width: 400px;
   max-height: calc(100vh - 20px);
-  border: 3px solid #00ff00;
+  border: 3px solid var(--mlc-inspect-border, #00ff00);
   border-radius: 8px;
   pointer-events: none;
   display: none;
   z-index: 1000000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-  background: white;
+  background: var(--mlc-inspect-bg, white);
   overflow: hidden;
   flex-direction: column;
 }
@@ -60,7 +60,7 @@ function injectCSS() {
 
 .inspect-popup.locked {
   pointer-events: all;
-  border-color: #0099ff;
+  border-color: var(--mlc-inspect-border-locked, #0099ff);
 }
 
 .inspect-canvas {
@@ -74,23 +74,23 @@ function injectCSS() {
   flex: 0 0 auto;
   width: 100%;
   padding: 8px 12px;
-  background: #1a1a2e;
+  background: var(--mlc-inspect-header-bg, #1a1a2e);
   display: flex;
   align-items: center;
   gap: 10px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--mlc-inspect-divider, #e0e0e0);
 }
 
 .inspect-shape-info .shape-index {
   font-weight: bold;
   font-size: 16px;
-  color: #00ff00;
+  color: var(--mlc-inspect-header-index-color, #00ff00);
   font-family: monospace;
 }
 
 .inspect-shape-info .shape-id {
   font-size: 12px;
-  color: #aaaacc;
+  color: var(--mlc-inspect-header-id-color, #aaaacc);
   font-family: monospace;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,8 +102,8 @@ function injectCSS() {
   min-height: 0;
   width: 100%;
   padding: 12px;
-  background: white;
-  border-top: 1px solid #e0e0e0;
+  background: var(--mlc-inspect-stats-bg, white);
+  border-top: 1px solid var(--mlc-inspect-divider, #e0e0e0);
   overflow-y: auto;
 }
 
@@ -118,7 +118,7 @@ function injectCSS() {
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  background: #f5f5f5;
+  background: var(--mlc-stat-item-bg, #f5f5f5);
   border-radius: 4px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
@@ -126,28 +126,30 @@ function injectCSS() {
 
 .stat-name {
   font-weight: 600;
-  color: #333;
+  color: var(--mlc-stat-name-color, #333);
 }
 
 .stat-value {
-  color: #666;
+  color: var(--mlc-stat-value-color, #666);
   margin-left: auto;
 }
 
 .stat-value-input {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--mlc-stat-input-border, #ccc);
   border-radius: 3px;
   font-size: 13px;
   font-family: inherit;
   margin-left: auto;
   min-width: 100px;
+  background: var(--mlc-stat-input-bg, white);
+  color: var(--mlc-stat-input-color, #111);
 }
 
 .stat-value-input:focus {
   outline: none;
-  border-color: #0099ff;
+  border-color: var(--mlc-inspect-border-locked, #0099ff);
   box-shadow: 0 0 0 2px rgba(0, 153, 255, 0.1);
 }
 
@@ -176,7 +178,7 @@ function injectCSS() {
   font-weight: 600;
   cursor: pointer;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: white;
+  color: var(--mlc-button-text-color, white);
   box-sizing: border-box;
   line-height: 1.5;
   height: 36px;
@@ -191,28 +193,28 @@ function injectCSS() {
 }
 
 .save-button {
-  background: #00aa00;
+  background: var(--mlc-save-bg, #00aa00);
 }
 
 .save-button:hover {
-  background: #008800;
+  background: var(--mlc-save-hover-bg, #008800);
 }
 
 .delete-button {
-  background: #ff6600;
+  background: var(--mlc-delete-bg, #ff4444);
 }
 
 .delete-button:hover {
-  background: #dd4400;
+  background: var(--mlc-delete-hover-bg, #cc0000);
 }
 
 .cancel-button {
-  background: #ff4444;
+  background: var(--mlc-cancel-bg, #6c757d);
   width: 100%;
 }
 
 .cancel-button:hover {
-  background: #cc0000;
+  background: var(--mlc-cancel-hover-bg, #5a6268);
 }`
 
   if (typeof document !== 'undefined') {
