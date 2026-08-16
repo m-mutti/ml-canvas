@@ -1,3 +1,10 @@
+## [0.8.1](https://github.com/m-mutti/ml-canvas/compare/v0.8.0...v0.8.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* keep canvas aligned after resize ([44290ba](https://github.com/m-mutti/ml-canvas/commit/44290bac2ace2ae99fe342b66bf8d895975fa69d))
+
 # [0.8.0](https://github.com/m-mutti/ml-canvas/compare/v0.7.0...v0.8.0) (2026-07-29)
 
 
