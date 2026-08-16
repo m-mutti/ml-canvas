@@ -2,8 +2,8 @@
   <div ref="containerRef" class="ml-canvas-container">
     <canvas
       ref="canvasRef"
-      :width="canvasWidth"
-      :height="canvasHeight"
+      :width="canvasBitmapWidth"
+      :height="canvasBitmapHeight"
       class="ml-canvas"
       @mousedown="handleMouseDown"
       @mousemove="handleMouseMove"
@@ -154,6 +154,8 @@ const containerRef = ref(null)
 const canvasRef = ref(null)
 const canvasWidth = ref(0)
 const canvasHeight = ref(0)
+const canvasBitmapWidth = ref(0)
+const canvasBitmapHeight = ref(0)
 const ctx = ref(null)
 const pastedImage = ref(null)
 const imagePasteEnabled = ref(props.pasteEnabled)
@@ -188,7 +190,9 @@ const lockedPosition = ref({ x: 0, y: 0 })
 const editableStatistics = ref(null)
 const inspectedShapeInfo = ref(null) // { id, index } of the currently inspected shape
 
-let resizeTimeout = null
+let resizeObserver = null
+let resizeFrame = null
+let resolutionMediaQuery = null
 
 // Computed cursor style based on drawing mode
 const drawingModeCursor = computed(() => {
@@ -234,27 +238,48 @@ const shouldShowShapeIndex = (shape, defaultValue) => {
   return typeof shape.showIndex === 'boolean' ? shape.showIndex : defaultValue
 }
 
-const updateCanvasSize = () => {
+const getDevicePixelRatio = () => {
+  const ratio = window.devicePixelRatio || 1
+  return ratio > 0 ? ratio : 1
+}
+
+const updateCanvasSize = (forceRedraw = false) => {
   if (!containerRef.value) return
 
   const container = containerRef.value
   const rect = container.getBoundingClientRect()
-  const newWidth = Math.floor(rect.width)
-  const newHeight = Math.floor(rect.height)
+  const newWidth = rect.width
+  const newHeight = rect.height
 
   if (newWidth <= 0 || newHeight <= 0) return
 
+  const devicePixelRatio = getDevicePixelRatio()
+  const newBitmapWidth = Math.max(1, Math.round(newWidth * devicePixelRatio))
+  const newBitmapHeight = Math.max(1, Math.round(newHeight * devicePixelRatio))
+  const sizeUnchanged =
+    canvasWidth.value === newWidth &&
+    canvasHeight.value === newHeight &&
+    canvasBitmapWidth.value === newBitmapWidth &&
+    canvasBitmapHeight.value === newBitmapHeight
+
+  if (sizeUnchanged && !forceRedraw) return
+
   canvasWidth.value = newWidth
   canvasHeight.value = newHeight
+  canvasBitmapWidth.value = newBitmapWidth
+  canvasBitmapHeight.value = newBitmapHeight
 
   nextTick(() => {
     if (canvasRef.value) {
       const canvas = canvasRef.value
 
-      canvas.width = newWidth
-      canvas.height = newHeight
+      canvas.width = newBitmapWidth
+      canvas.height = newBitmapHeight
 
       const context = canvas.getContext('2d')
+      const scaleX = newBitmapWidth / newWidth
+      const scaleY = newBitmapHeight / newHeight
+      context.setTransform(scaleX, 0, 0, scaleY, 0, 0)
 
       // Enable image smoothing for better quality
       context.imageSmoothingEnabled = true
@@ -274,11 +299,52 @@ const updateCanvasSize = () => {
   })
 }
 
-const debouncedResize = () => {
-  if (resizeTimeout) {
-    clearTimeout(resizeTimeout)
+const scheduleCanvasResize = () => {
+  if (resizeFrame !== null) cancelAnimationFrame(resizeFrame)
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = null
+    updateCanvasSize()
+  })
+}
+
+const handleResolutionChange = () => {
+  watchDevicePixelRatio()
+  scheduleCanvasResize()
+}
+
+const watchDevicePixelRatio = () => {
+  if (resolutionMediaQuery) {
+    if (resolutionMediaQuery.removeEventListener) {
+      resolutionMediaQuery.removeEventListener('change', handleResolutionChange)
+    } else {
+      resolutionMediaQuery.removeListener?.(handleResolutionChange)
+    }
   }
-  resizeTimeout = setTimeout(updateCanvasSize, 100)
+
+  if (!window.matchMedia) return
+
+  resolutionMediaQuery = window.matchMedia(`(resolution: ${getDevicePixelRatio()}dppx)`)
+  if (resolutionMediaQuery.addEventListener) {
+    resolutionMediaQuery.addEventListener('change', handleResolutionChange)
+  } else {
+    resolutionMediaQuery.addListener?.(handleResolutionChange)
+  }
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') updateCanvasSize(true)
+}
+
+const handlePageShow = () => updateCanvasSize(true)
+
+const stopWatchingDevicePixelRatio = () => {
+  if (!resolutionMediaQuery) return
+  if (resolutionMediaQuery.removeEventListener) {
+    resolutionMediaQuery.removeEventListener('change', handleResolutionChange)
+  } else {
+    resolutionMediaQuery.removeListener?.(handleResolutionChange)
+  }
+  resolutionMediaQuery = null
 }
 
 const initializeMagnifierCanvas = () => {
@@ -330,15 +396,16 @@ const updateMagnifier = (event) => {
 
   // Draw magnified view
   const magnification = 3
-  const sourceSize = 200 / magnification
+  const sourceWidth = (200 / magnification) * scaleX
+  const sourceHeight = (200 / magnification) * scaleY
 
   magnifierCtx.value.clearRect(0, 0, 200, 200)
   magnifierCtx.value.drawImage(
     canvas,
-    Math.max(0, x - sourceSize / 2),
-    Math.max(0, y - sourceSize / 2),
-    sourceSize,
-    sourceSize,
+    Math.max(0, x - sourceWidth / 2),
+    Math.max(0, y - sourceHeight / 2),
+    sourceWidth,
+    sourceHeight,
     0,
     0,
     200,
@@ -666,9 +733,10 @@ const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fit
     img.onload = () => {
       let drawWidth = width || img.naturalWidth
       let drawHeight = height || img.naturalHeight
+      const shouldFitCanvas = fitCanvas && (width === null || height === null)
 
       // Fit image to canvas while maintaining aspect ratio
-      if (fitCanvas && (width === null || height === null)) {
+      if (shouldFitCanvas) {
         const canvasAspect = canvasWidth.value / canvasHeight.value
         const imageAspect = img.naturalWidth / img.naturalHeight
 
@@ -698,6 +766,7 @@ const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fit
         canvasHeight: drawHeight,
         originalWidth: img.naturalWidth,
         originalHeight: img.naturalHeight,
+        fitCanvas: shouldFitCanvas,
       }
 
       resolve({ width: drawWidth, height: drawHeight, x, y })
@@ -1080,6 +1149,7 @@ const pasteImage = async (x = 0, y = 0, width = null, height = null, fitCanvas =
               canvasHeight: result.height,
               originalWidth: img.naturalWidth,
               originalHeight: img.naturalHeight,
+              fitCanvas,
             }
           }
 
@@ -1139,6 +1209,7 @@ const handlePaste = async (event) => {
             canvasHeight: result.height,
             originalWidth: img.naturalWidth,
             originalHeight: img.naturalHeight,
+            fitCanvas: true,
           }
         }
 
@@ -1182,9 +1253,10 @@ const updateImage = async (
     try {
       let drawWidth = width || imageElement.naturalWidth
       let drawHeight = height || imageElement.naturalHeight
+      const shouldFitCanvas = fitCanvas && (width === null || height === null)
 
       // Fit image to canvas while maintaining aspect ratio
-      if (fitCanvas && (width === null || height === null)) {
+      if (shouldFitCanvas) {
         const canvasAspect = canvasWidth.value / canvasHeight.value
         const imageAspect = imageElement.naturalWidth / imageElement.naturalHeight
 
@@ -1216,6 +1288,7 @@ const updateImage = async (
         canvasHeight: drawHeight,
         originalWidth: imageElement.naturalWidth,
         originalHeight: imageElement.naturalHeight,
+        fitCanvas: shouldFitCanvas,
       }
 
       // Redraw all existing shapes on top of new image
@@ -1236,8 +1309,8 @@ const getMousePos = (event) => {
   const rect = canvas.getBoundingClientRect()
 
   // Account for the difference between canvas display size and internal resolution
-  const scaleX = canvas.width / rect.width
-  const scaleY = canvas.height / rect.height
+  const scaleX = canvasWidth.value / rect.width
+  const scaleY = canvasHeight.value / rect.height
 
   return {
     x: (event.clientX - rect.left) * scaleX,
@@ -1698,8 +1771,51 @@ const drawSmoothPath = (context, points, isClosed = true) => {
   }
 }
 
+const fitImageToCanvas = () => {
+  if (!imageInfo.value?.fitCanvas) return
+
+  const { originalWidth, originalHeight } = imageInfo.value
+  if (!originalWidth || !originalHeight || !canvasWidth.value || !canvasHeight.value) return
+
+  const scale = Math.min(
+    canvasWidth.value / originalWidth,
+    canvasHeight.value / originalHeight,
+  )
+  const fittedWidth = originalWidth * scale
+  const fittedHeight = originalHeight * scale
+
+  imageInfo.value = {
+    ...imageInfo.value,
+    canvasX: (canvasWidth.value - fittedWidth) / 2,
+    canvasY: (canvasHeight.value - fittedHeight) / 2,
+    canvasWidth: fittedWidth,
+    canvasHeight: fittedHeight,
+  }
+}
+
+const syncShapeCanvasCoordinates = (shape) => {
+  if (!imageInfo.value || !shape?.image) return
+
+  if (shape.type === 'rectangle') {
+    const topLeft = scaleToCanvasCoordinates(shape.image.x, shape.image.y)
+    const bottomRight = scaleToCanvasCoordinates(
+      shape.image.x + shape.image.width,
+      shape.image.y + shape.image.height,
+    )
+    shape.canvas = {
+      x: topLeft.x,
+      y: topLeft.y,
+      width: bottomRight.x - topLeft.x,
+      height: bottomRight.y - topLeft.y,
+    }
+  } else if (Array.isArray(shape.image)) {
+    shape.canvas = shape.image.map((point) => scaleToCanvasCoordinates(point.x, point.y))
+  }
+}
+
 const redrawCanvas = () => {
   clearCanvasRect()
+  fitImageToCanvas()
 
   // Redraw image if exists
   if (pastedImage.value && imageInfo.value) {
@@ -1709,6 +1825,7 @@ const redrawCanvas = () => {
 
   // Redraw all shapes using renderShape function
   drawnShapes.value.forEach((shape) => {
+    syncShapeCanvasCoordinates(shape)
     renderShape(shape)
   })
 }
@@ -2005,8 +2122,15 @@ const getDisplayStatistics = (cellId) => {
 
 onMounted(() => {
   ensureStylesInjected()
-  window.addEventListener('resize', debouncedResize)
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(scheduleCanvasResize)
+    resizeObserver.observe(containerRef.value)
+  }
+  window.addEventListener('resize', scheduleCanvasResize)
   window.addEventListener('paste', handlePaste)
+  window.addEventListener('pageshow', handlePageShow)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  watchDevicePixelRatio()
   updateCanvasSize()
 
   nextTick(() => {
@@ -2016,11 +2140,15 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', debouncedResize)
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  window.removeEventListener('resize', scheduleCanvasResize)
   window.removeEventListener('paste', handlePaste)
-  if (resizeTimeout) {
-    clearTimeout(resizeTimeout)
-  }
+  window.removeEventListener('pageshow', handlePageShow)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  stopWatchingDevicePixelRatio()
+  if (resizeFrame !== null) cancelAnimationFrame(resizeFrame)
+  resizeFrame = null
 })
 
 const setMagnifierEnabled = (enabled) => {
