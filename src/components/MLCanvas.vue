@@ -39,6 +39,8 @@
         :save="saveStatistics"
         :remove="deleteShape"
         :cancel="cancelInspectLock"
+        :inspect-shape-border-visible="inspectShapeBorderVisible"
+        :toggle-inspect-shape-border="toggleInspectShapeBorder"
       >
         <div
           v-if="inspectedShapeInfo && resolvedInspectPopoverConfiguration.header.show"
@@ -53,7 +55,11 @@
         </div>
         <div v-if="currentShapeStatistics" class="inspect-statistics">
           <div class="statistics-card">
-            <div v-for="(stat, index) in currentShapeStatistics" :key="index" class="statistic-item">
+            <div
+              v-for="(stat, index) in currentShapeStatistics"
+              :key="index"
+              class="statistic-item"
+            >
               <span class="stat-name">{{ stat.name }}:</span>
               <input
                 v-if="inspectLocked && stat.editable !== false"
@@ -73,6 +79,17 @@
                 {{ resolvedInspectPopoverConfiguration.buttons.deleteLabel }}
               </button>
             </div>
+            <button
+              v-if="resolvedInspectPopoverConfiguration.buttons.showBorderToggle"
+              class="border-toggle-button"
+              @click="toggleInspectShapeBorder"
+            >
+              {{
+                inspectShapeBorderVisible
+                  ? resolvedInspectPopoverConfiguration.buttons.hideBordersLabel
+                  : resolvedInspectPopoverConfiguration.buttons.showBordersLabel
+              }}
+            </button>
             <button class="cancel-button" @click="cancelInspectLock">
               {{ resolvedInspectPopoverConfiguration.buttons.cancelLabel }}
             </button>
@@ -189,6 +206,7 @@ const lockedShapeId = ref(null)
 const lockedPosition = ref({ x: 0, y: 0 })
 const editableStatistics = ref(null)
 const inspectedShapeInfo = ref(null) // { id, index } of the currently inspected shape
+const inspectShapeBorderVisible = ref(true)
 
 let resizeObserver = null
 let resizeFrame = null
@@ -230,6 +248,9 @@ const resolvedInspectPopoverConfiguration = computed(() => {
       saveLabel: config.buttons?.saveLabel ?? 'Save',
       deleteLabel: config.buttons?.deleteLabel ?? 'Delete',
       cancelLabel: config.buttons?.cancelLabel ?? 'Cancel',
+      showBorderToggle: config.buttons?.showBorderToggle ?? false,
+      hideBordersLabel: config.buttons?.hideBordersLabel ?? 'Hide Border',
+      showBordersLabel: config.buttons?.showBordersLabel ?? 'Show Border',
     },
   }
 })
@@ -548,6 +569,118 @@ const deleteShape = () => {
   cancelInspectLock()
 }
 
+const drawInspectPreview = (shape, boundingBox = getBoundingBox(shape)) => {
+  if (!shape || !boundingBox || !inspectCtx.value || !pastedImage.value || !imageInfo.value) {
+    return false
+  }
+
+  const padding = props.inspectPadding
+  const cropX = Math.max(0, boundingBox.x - padding)
+  const cropY = Math.max(0, boundingBox.y - padding)
+  const cropWidth = Math.min(boundingBox.width + padding * 2, imageInfo.value.originalWidth - cropX)
+  const cropHeight = Math.min(
+    boundingBox.height + padding * 2,
+    imageInfo.value.originalHeight - cropY,
+  )
+
+  inspectCtx.value.clearRect(0, 0, 400, 400)
+
+  const scale = Math.min(400 / cropWidth, 400 / cropHeight)
+  const drawWidth = cropWidth * scale
+  const drawHeight = cropHeight * scale
+  const offsetX = (400 - drawWidth) / 2
+  const offsetY = (400 - drawHeight) / 2
+
+  inspectCtx.value.drawImage(
+    pastedImage.value,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    offsetX,
+    offsetY,
+    drawWidth,
+    drawHeight,
+  )
+
+  if (inspectShapeBorderVisible.value) {
+    inspectCtx.value.save()
+    inspectCtx.value.translate(offsetX, offsetY)
+    inspectCtx.value.scale(scale, scale)
+    inspectCtx.value.translate(-cropX, -cropY)
+
+    if (shape.type === 'rectangle') {
+      const rect = shape.image
+      inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
+      inspectCtx.value.lineWidth = 3 / scale
+      inspectCtx.value.strokeRect(rect.x, rect.y, rect.width, rect.height)
+    } else if (
+      shape.type === 'polygon' ||
+      shape.type === 'freestyle' ||
+      shape.type === 'freeform'
+    ) {
+      const points = shape.image
+      if (points && points.length > 0) {
+        inspectCtx.value.beginPath()
+        inspectCtx.value.moveTo(points[0].x, points[0].y)
+        for (let i = 1; i < points.length; i++) {
+          inspectCtx.value.lineTo(points[i].x, points[i].y)
+        }
+        if (shape.style.closePath) {
+          inspectCtx.value.closePath()
+        }
+        inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
+        inspectCtx.value.lineWidth = 3 / scale
+        inspectCtx.value.stroke()
+      }
+    }
+
+    inspectCtx.value.restore()
+  }
+
+  if (
+    shouldShowShapeIndex(shape, resolvedInspectPopoverConfiguration.value.canvas.showShapeIndex)
+  ) {
+    inspectCtx.value.save()
+    inspectCtx.value.translate(offsetX, offsetY)
+    inspectCtx.value.scale(scale, scale)
+    inspectCtx.value.translate(-cropX, -cropY)
+
+    const fontSize = 16 / scale
+    inspectCtx.value.font = `bold ${fontSize}px Arial`
+    inspectCtx.value.lineWidth = 3 / scale
+    const label = `#${shape.index}`
+    const color = shape.style.strokeStyle || '#00ff00'
+
+    let labelX, labelY
+    if (shape.type === 'rectangle') {
+      labelX = shape.image.x
+      labelY = shape.image.y - 5 / scale
+    } else if (shape.image && shape.image.length > 0) {
+      labelX = shape.image[0].x
+      labelY = shape.image[0].y - 5 / scale
+    }
+
+    if (labelX != null) {
+      inspectCtx.value.strokeStyle = '#ffffff'
+      inspectCtx.value.strokeText(label, labelX, labelY)
+      inspectCtx.value.fillStyle = color
+      inspectCtx.value.fillText(label, labelX, labelY)
+    }
+
+    inspectCtx.value.restore()
+  }
+
+  return true
+}
+
+const toggleInspectShapeBorder = () => {
+  inspectShapeBorderVisible.value = !inspectShapeBorderVisible.value
+  const shapeId = lockedShapeId.value || hoveredShapeId.value
+  const shape = shapeId ? findShapeById(shapeId) : null
+  if (shape) drawInspectPreview(shape)
+}
+
 const updateInspect = (event) => {
   // If locked, don't update on hover
   if (inspectLocked.value) {
@@ -628,101 +761,7 @@ const updateInspect = (event) => {
     })
   }
 
-  // Draw the cropped image area with padding
-  const padding = props.inspectPadding
-  const cropX = Math.max(0, bbox.x - padding)
-  const cropY = Math.max(0, bbox.y - padding)
-  const cropWidth = Math.min(bbox.width + padding * 2, imageInfo.value.originalWidth - cropX)
-  const cropHeight = Math.min(bbox.height + padding * 2, imageInfo.value.originalHeight - cropY)
-
-  inspectCtx.value.clearRect(0, 0, 400, 400)
-
-  // Calculate scale to fit in popup (max 400x400)
-  const scale = Math.min(400 / cropWidth, 400 / cropHeight)
-  const drawWidth = cropWidth * scale
-  const drawHeight = cropHeight * scale
-  const offsetX = (400 - drawWidth) / 2
-  const offsetY = (400 - drawHeight) / 2
-
-  // Draw the cropped image
-  inspectCtx.value.drawImage(
-    pastedImage.value,
-    cropX,
-    cropY,
-    cropWidth,
-    cropHeight,
-    offsetX,
-    offsetY,
-    drawWidth,
-    drawHeight,
-  )
-
-  // Draw the shape outline
-  inspectCtx.value.save()
-
-  // Transform context to match the scaled crop area
-  inspectCtx.value.translate(offsetX, offsetY)
-  inspectCtx.value.scale(scale, scale)
-  inspectCtx.value.translate(-cropX, -cropY)
-
-  // Draw the shape
-  if (shape.type === 'rectangle') {
-    const rect = shape.image
-    inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
-    inspectCtx.value.lineWidth = 3 / scale
-    inspectCtx.value.strokeRect(rect.x, rect.y, rect.width, rect.height)
-  } else if (shape.type === 'polygon' || shape.type === 'freestyle' || shape.type === 'freeform') {
-    const points = shape.image
-    if (points && points.length > 0) {
-      inspectCtx.value.beginPath()
-      inspectCtx.value.moveTo(points[0].x, points[0].y)
-      for (let i = 1; i < points.length; i++) {
-        inspectCtx.value.lineTo(points[i].x, points[i].y)
-      }
-      if (shape.style.closePath) {
-        inspectCtx.value.closePath()
-      }
-      inspectCtx.value.strokeStyle = shape.style.strokeStyle || '#00ff00'
-      inspectCtx.value.lineWidth = 3 / scale
-      inspectCtx.value.stroke()
-    }
-  }
-
-  inspectCtx.value.restore()
-
-  if (
-    shouldShowShapeIndex(shape, resolvedInspectPopoverConfiguration.value.canvas.showShapeIndex)
-  ) {
-    // Draw shape index label on the inspect canvas.
-    inspectCtx.value.save()
-    inspectCtx.value.translate(offsetX, offsetY)
-    inspectCtx.value.scale(scale, scale)
-    inspectCtx.value.translate(-cropX, -cropY)
-
-    const fontSize = 16 / scale
-    inspectCtx.value.font = `bold ${fontSize}px Arial`
-    inspectCtx.value.lineWidth = 3 / scale
-    const label = `#${shape.index}`
-    const color = shape.style.strokeStyle || '#00ff00'
-
-    let labelX, labelY
-    if (shape.type === 'rectangle') {
-      labelX = shape.image.x
-      labelY = shape.image.y - 5 / scale
-    } else if (shape.image && shape.image.length > 0) {
-      labelX = shape.image[0].x
-      labelY = shape.image[0].y - 5 / scale
-    }
-
-    if (labelX != null) {
-      inspectCtx.value.strokeStyle = '#ffffff'
-      inspectCtx.value.strokeText(label, labelX, labelY)
-      inspectCtx.value.fillStyle = color
-      inspectCtx.value.fillText(label, labelX, labelY)
-    }
-
-    inspectCtx.value.restore()
-  }
+  drawInspectPreview(shape, bbox)
 }
 
 const addImage = async (imageSrc, x = 0, y = 0, width = null, height = null, fitCanvas = true) => {
@@ -1777,10 +1816,7 @@ const fitImageToCanvas = () => {
   const { originalWidth, originalHeight } = imageInfo.value
   if (!originalWidth || !originalHeight || !canvasWidth.value || !canvasHeight.value) return
 
-  const scale = Math.min(
-    canvasWidth.value / originalWidth,
-    canvasHeight.value / originalHeight,
-  )
+  const scale = Math.min(canvasWidth.value / originalWidth, canvasHeight.value / originalHeight)
   const fittedWidth = originalWidth * scale
   const fittedHeight = originalHeight * scale
 

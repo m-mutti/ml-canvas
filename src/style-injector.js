@@ -168,6 +168,7 @@ function injectCSS() {
 
 .save-button,
 .delete-button,
+.border-toggle-button,
 .cancel-button {
   flex: 1;
   padding: 8px 12px;
@@ -206,6 +207,15 @@ function injectCSS() {
 
 .delete-button:hover {
   background: var(--mlc-delete-hover-bg, #cc0000);
+}
+
+.border-toggle-button {
+  background: var(--mlc-border-toggle-bg, #475569);
+  width: 100%;
+}
+
+.border-toggle-button:hover {
+  background: var(--mlc-border-toggle-hover-bg, #334155);
 }
 
 .cancel-button {
