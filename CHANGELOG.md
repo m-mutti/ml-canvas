@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/m-mutti/ml-canvas/compare/v0.9.0...v0.10.0) (2026-08-21)
+
+
+### Features
+
+* control inspect contour visibility ([34751e5](https://github.com/m-mutti/ml-canvas/commit/34751e5bf1fde27bf0b2c513989206813c72b244))
+
 # [0.9.0](https://github.com/m-mutti/ml-canvas/compare/v0.8.1...v0.9.0) (2026-08-21)
 
 
