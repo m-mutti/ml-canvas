@@ -165,6 +165,7 @@ const emit = defineEmits([
   'statistics-updated',
   'canvas-clicked',
   'canvas-double-clicked',
+  'inspect-border-visibility-changed',
 ])
 
 const containerRef = ref(null)
@@ -674,11 +675,16 @@ const drawInspectPreview = (shape, boundingBox = getBoundingBox(shape)) => {
   return true
 }
 
-const toggleInspectShapeBorder = () => {
-  inspectShapeBorderVisible.value = !inspectShapeBorderVisible.value
+const setInspectShapeBorderVisible = (visible) => {
+  inspectShapeBorderVisible.value = Boolean(visible)
   const shapeId = lockedShapeId.value || hoveredShapeId.value
   const shape = shapeId ? findShapeById(shapeId) : null
   if (shape) drawInspectPreview(shape)
+  emit('inspect-border-visibility-changed', inspectShapeBorderVisible.value)
+}
+
+const toggleInspectShapeBorder = () => {
+  setInspectShapeBorderVisible(!inspectShapeBorderVisible.value)
 }
 
 const updateInspect = (event) => {
@@ -2200,6 +2206,8 @@ defineExpose({
   deleteShape,
   cancelInspectLock,
   isInspectLocked,
+  setInspectShapeBorderVisible,
+  toggleInspectShapeBorder,
   addImage,
   drawRectangle,
   drawPolygon,

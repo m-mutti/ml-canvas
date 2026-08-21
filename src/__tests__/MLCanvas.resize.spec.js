@@ -195,7 +195,9 @@ describe('MLCanvas resizing', () => {
     inspectContext.drawImage.mockClear()
     inspectContext.strokeRect.mockClear()
 
-    await toggle.trigger('click')
+    expect(wrapper.vm.toggleInspectShapeBorder).toBeTypeOf('function')
+    wrapper.vm.toggleInspectShapeBorder()
+    await nextTick()
     expect(wrapper.find('.border-toggle-button').text()).toBe('Show Cell Border')
     expect(inspectContext.clearRect).toHaveBeenCalled()
     expect(inspectContext.drawImage).toHaveBeenCalled()
@@ -206,5 +208,35 @@ describe('MLCanvas resizing', () => {
     expect(wrapper.find('.border-toggle-button').text()).toBe('Hide Cell Border')
     expect(inspectContext.strokeRect).toHaveBeenCalled()
     expect(canvasContext.strokeRect).not.toHaveBeenCalled()
+  })
+
+  it('toggles the border in the unlocked inspect hover preview', async () => {
+    await mountCanvasWithImage({
+      props: {
+        drawingMode: 'inspect',
+        inspectPopoverConfiguration: {
+          canvas: { showShapeIndex: false },
+        },
+      },
+    })
+
+    const inspectCanvas = wrapper.find('canvas.inspect-canvas').element
+    const inspectContext = contexts.get(inspectCanvas)
+
+    await wrapper.find('canvas.ml-canvas').trigger('mousemove', {
+      clientX: 75,
+      clientY: 125,
+    })
+    expect(wrapper.vm.isInspectLocked()).toBe(false)
+    expect(inspectContext.strokeRect).toHaveBeenCalled()
+
+    inspectContext.strokeRect.mockClear()
+    wrapper.vm.setInspectShapeBorderVisible(false)
+    await nextTick()
+
+    expect(inspectContext.clearRect).toHaveBeenCalled()
+    expect(inspectContext.drawImage).toHaveBeenCalled()
+    expect(inspectContext.strokeRect).not.toHaveBeenCalled()
+    expect(wrapper.emitted('inspect-border-visibility-changed')).toEqual([[false]])
   })
 })
