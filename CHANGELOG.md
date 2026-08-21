@@ -1,3 +1,10 @@
+# [0.9.0](https://github.com/m-mutti/ml-canvas/compare/v0.8.1...v0.9.0) (2026-08-21)
+
+
+### Features
+
+* toggle cell border in inspect preview ([ea0f1ef](https://github.com/m-mutti/ml-canvas/commit/ea0f1ef708848aee931caac5e83c7ce7d402a680))
+
 ## [0.8.1](https://github.com/m-mutti/ml-canvas/compare/v0.8.0...v0.8.1) (2026-08-16)
 
 
