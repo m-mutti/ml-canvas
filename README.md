@@ -417,7 +417,8 @@ canvasRef.value.drawRectangle(100, 50, 200, 150, {
     { name: 'ID', type: 'string', value: '12345', editable: false },  // Read-only
     { name: 'Class', type: 'string', value: 'Person' },                // Editable (default)
     { name: 'Confidence', type: 'number', value: 0.95 },               // Editable (default)
-    { name: 'Area', type: 'number', value: 30000, editable: true }     // Explicitly editable
+    { name: 'Area', type: 'number', value: 30000, editable: true },    // Explicitly editable
+    { name: 'Label', type: 'select', value: 'Car', options: ['Car', 'Truck'] } // Dropdown
   ]
 })
 
@@ -448,7 +449,8 @@ const handleStatisticsUpdate = ({ shapeId, statistics }) => {
 
 // Statistic properties:
 // - name: Display name for the statistic
-// - type: 'string' or 'number' (determines input type)
+// - type: 'string', 'number' or 'select' (determines input type)
+// - options: for 'select', an array of values or { label, value } objects
 // - value: Current value
 // - editable: Boolean (default: true). Set to false for read-only fields
 ```

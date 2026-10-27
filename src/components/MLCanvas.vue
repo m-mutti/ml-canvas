@@ -61,8 +61,26 @@
               class="statistic-item"
             >
               <span class="stat-name">{{ stat.name }}:</span>
+              <select
+                v-if="
+                  inspectLocked &&
+                  stat.editable !== false &&
+                  stat.type === 'select' &&
+                  Array.isArray(stat.options)
+                "
+                class="stat-value-input stat-value-select"
+                v-model="editableStatistics[index].value"
+              >
+                <option
+                  v-for="option in stat.options"
+                  :key="typeof option === 'object' ? option.value : option"
+                  :value="typeof option === 'object' ? option.value : option"
+                >
+                  {{ typeof option === 'object' ? (option.label ?? option.value) : option }}
+                </option>
+              </select>
               <input
-                v-if="inspectLocked && stat.editable !== false"
+                v-else-if="inspectLocked && stat.editable !== false"
                 :type="stat.type === 'number' ? 'number' : 'text'"
                 class="stat-value-input"
                 v-model="editableStatistics[index].value"

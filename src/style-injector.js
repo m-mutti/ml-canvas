@@ -147,6 +147,15 @@ function injectCSS() {
   color: var(--mlc-stat-input-color, #111);
 }
 
+.stat-value-select {
+  cursor: pointer;
+}
+
+.stat-value-select option {
+  background: var(--mlc-stat-option-bg, white);
+  color: var(--mlc-stat-option-color, #111);
+}
+
 .stat-value-input:focus {
   outline: none;
   border-color: var(--mlc-inspect-border-locked, #0099ff);
