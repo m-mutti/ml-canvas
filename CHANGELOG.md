@@ -1,3 +1,10 @@
+## [0.10.1](https://github.com/m-mutti/ml-canvas/compare/v0.10.0...v0.10.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* added dropdown option ([fd04f4d](https://github.com/m-mutti/ml-canvas/commit/fd04f4d27d4ffbec9bbe5faffbf70bb3a06bb001))
+
 # [0.10.0](https://github.com/m-mutti/ml-canvas/compare/v0.9.0...v0.10.0) (2026-08-21)
 
 
